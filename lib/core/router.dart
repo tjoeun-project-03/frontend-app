@@ -7,6 +7,7 @@ import '../views/auth/loginView.dart';
 import '../views/auth/roleSelectionView.dart';
 import '../views/auth/signupView.dart';
 import '../views/auth/licenseCameraView.dart';
+import '../views/shipper/shipperHomeView.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -31,6 +32,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
           path: '/license-camera',
           builder: (context, state) => const LicenseCameraView(),
+      ),
+      GoRoute(
+          path: '/shipper-home',
+          builder: (context, state) => const ShipperHomeView(),
       ),
     ],
   );

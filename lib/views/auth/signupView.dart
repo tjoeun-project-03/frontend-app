@@ -139,7 +139,7 @@ class _SignupViewState extends ConsumerState<SignupView> {
                     // 차주인 경우 모달 띄우기
                     DriverAuthModal.show(context);
                   } else {
-                    context.go('/start');
+                    context.go('/shipper-home');
                   }
                 },
                 style: ElevatedButton.styleFrom(

@@ -82,7 +82,7 @@ class RoleSelectionView extends ConsumerWidget {
             Center(
               child: TextButton(
                 onPressed: () => context.go('/login'),
-                child: const Text("이미 계정이 있으신가요? 로그인", style: TextStyle(color: Colors.black54)),
+                child: const Text("이미 계정이 있으신가요? 로그인", style: TextStyle(color: primaryNavy)),
               ),
             ),
           ],
