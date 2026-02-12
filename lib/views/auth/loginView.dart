@@ -46,7 +46,7 @@ class _LoginViewState extends State<LoginView> {
         ),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
+        padding: const EdgeInsets.all(40.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -133,18 +133,6 @@ class _LoginViewState extends State<LoginView> {
               ),
             ),
 
-            // 6. 간편 로그인 구분선
-            const SizedBox(height: 40),
-            Row(
-              children: [
-                Expanded(child: Container(height: 1.5, color: primaryNavy)),
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 10),
-                  child: Text("간편 로그인", style: TextStyle(color: Colors.grey)),
-                ),
-                Expanded(child: Container(height: 1.5, color: primaryNavy)),
-              ],
-            ),
           ],
         ),
       ),

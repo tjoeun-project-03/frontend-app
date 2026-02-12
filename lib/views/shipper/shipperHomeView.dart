@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../widgets/common/bottomNavBar.dart';
+import 'shipperPaymentView.dart';
 
 class ShipperHomeView extends StatefulWidget {
   const ShipperHomeView({super.key});
@@ -9,11 +9,9 @@ class ShipperHomeView extends StatefulWidget {
 }
 
 class _ShipperHomeViewState extends State<ShipperHomeView> {
-  int _currentIndex = 0;
-  double _estimatedWeight = 1.0; // 예상 무게 초기값
-  String? _selectedCategory; // 선택된 화물 카테고리
+  double _estimatedWeight = 1.0;
+  String? _selectedCategory;
 
-  // 화물 정보 데이터를 아이콘과 함께 정의
   final List<Map<String, dynamic>> _categories = [
     {"name": "박스/잡화", "icon": Icons.inventory_2_outlined},
     {"name": "가구", "icon": Icons.chair_outlined},
@@ -26,117 +24,163 @@ class _ShipperHomeViewState extends State<ShipperHomeView> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        title: Text("운송 예약", style: TextStyle(color: jimlineNavy, fontWeight: FontWeight.bold)),
-        actions: [IconButton(icon: Icon(Icons.notifications_none, color: jimlineNavy), onPressed: () {})],
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 1. 출발지/도착지 검색 영역
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, 4))],
-                ),
-                child: Column(
-                  children: [
-                    _buildSearchField(Icons.search, Colors.blue, "출발지 검색"),
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 8.0),
-                      child: Divider(),
-                    ),
-                    _buildSearchField(Icons.place, Colors.red, "도착지 검색"),
-                  ],
-                ),
-              ),
-            ),
+    // 무게에 따른 가상 가격 계산 로직 (예시 : 톤당 5만원 + 기본료 3만원)
+    int estimatedPrice = (_estimatedWeight * 50000 + 30000).toInt();
 
-            // 2. 지도 영역
-            Container(
-              height: 200,
-              width: double.infinity,
-              margin: const EdgeInsets.symmetric(horizontal: 16),
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 60), // 상태바 영역 확보
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16),
+            child: Text(
+              "운송 예약",
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF1A2B88)),
+            ),
+          ),
+
+          // 상단 검색 카드
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Container(
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.grey[200],
+                color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
+                boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10, offset: const Offset(0, 4))],
               ),
-              child: const Center(child: Text("지도 API 영역", style: TextStyle(color: Colors.grey))),
-            ),
-
-            const SizedBox(height: 24),
-
-            // 3. 화물 정보 카테고리 선택
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Text("화물 정보", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: jimlineNavy)),
-            ),
-            const SizedBox(height: 12),
-            _buildCategoryList(), // 분리된 카테고리 리스트 호출
-
-            const SizedBox(height: 32),
-
-            // 4. 예상 무게 조절 (슬라이더)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              child: Column(
                 children: [
-                  Text("예상 무게", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: jimlineNavy)),
-                  Text("${_estimatedWeight.toStringAsFixed(1)} 톤", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: jimlineNavy)),
+                  _buildSearchField(Icons.search, Colors.blue, "출발지 검색"),
+                  const Divider(height: 24),
+                  _buildSearchField(Icons.place, Colors.red, "도착지 검색"),
                 ],
               ),
             ),
-            Slider(
-              value: _estimatedWeight,
-              min: 0.5,
-              max: 25.0,
-              divisions: 49,
-              activeColor: jimlineNavy,
-              inactiveColor: Colors.grey[200],
-              onChanged: (value) => setState(() => _estimatedWeight = value),
+          ),
+
+          // 지도 영역
+          Container(
+            height: 200,
+            width: double.infinity,
+            margin: const EdgeInsets.symmetric(horizontal: 16),
+            decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(16)),
+            child: const Center(child: Text("지도 영역")),
+          ),
+
+          const SizedBox(height: 24),
+
+          // 화물 종류 선택
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Text("화물 종류", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: jimlineNavy)),
+          ),
+          const SizedBox(height: 12),
+          _buildCategoryList(),
+
+          const SizedBox(height: 32),
+
+          // 예상 무게 슬라이더
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text("예상 무게", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: jimlineNavy)),
+                Text("${_estimatedWeight.toStringAsFixed(1)} 톤", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: jimlineNavy)),
+              ],
             ),
+          ),
+          Slider(
+            value: _estimatedWeight,
+            min: 0.5,
+            max: 25.0,
+            divisions: 49,
+            activeColor: jimlineNavy,
+            onChanged: (value) => setState(() => _estimatedWeight = value),
+          ),
 
-            const SizedBox(height: 40),
-
-            // 5. 예약 버튼
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: ElevatedButton(
-                onPressed: () {},
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: jimlineNavy,
-                  foregroundColor: Colors.white,
-                  minimumSize: const Size(double.infinity, 60),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-                child: const Text("운송 예약하기", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          // 예상 견적 섹션
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.grey[50],
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.grey[200]!),
+              ),
+              child: Column(
+                children: [
+                  _buildPriceRow("운송 기본 요금", "${(estimatedPrice * 0.8).toInt()}원"),
+                  const SizedBox(height: 12),
+                  _buildPriceRow("중량 할증 (톤당)", "50,000원"),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 16.0),
+                    child: Divider(),
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text("최종 예상 견적", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      Text(
+                        "${estimatedPrice.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}원",
+                        style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: jimlineNavy),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
-          ],
-        ),
-      ),
-      // 분리된 하단 네비게이션 바 적용
-      bottomNavigationBar: JimlineBottomNavBar(
-        currentIndex: _currentIndex,
-        onTap: (index) => setState(() => _currentIndex = index),
+          ),
+
+
+          // 예약 버튼
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: ElevatedButton(
+              onPressed: () {
+                // 결제 화면으로 이동하면서 현재 설정된 무게와 계산된 가격 전달
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ShipperPaymentView(
+                      weight: _estimatedWeight,
+                      price: (_estimatedWeight * 50000 + 30000).toInt(), // 견적 로직과 동일하게 설정
+                    ),
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: jimlineNavy,
+                foregroundColor: Colors.white,
+                minimumSize: const Size(double.infinity, 60),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: const Text("운송 예약하기", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            )
+          ),
+          const SizedBox(height: 40),
+        ],
       ),
     );
   }
 
-  // 카테고리 리스트
+  // 가격 행을 만드는 헬퍼 위젯
+  Widget _buildPriceRow(String label, String price) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: const TextStyle(color: Colors.grey, fontSize: 14)),
+        Text(price, style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14)),
+      ],
+    );
+  }
+
   Widget _buildCategoryList() {
     return SizedBox(
-      height: 100, // 카드 높이 설정
+      height: 100,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.only(left: 16),
@@ -152,31 +196,14 @@ class _ShipperHomeViewState extends State<ShipperHomeView> {
               decoration: BoxDecoration(
                 color: isSelected ? jimlineNavy : Colors.white,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: isSelected ? jimlineNavy : Colors.grey[200]!,
-                  width: 1.5,
-                ),
-                boxShadow: isSelected
-                    ? [BoxShadow(color: jimlineNavy.withOpacity(0.2), blurRadius: 8, offset: const Offset(0, 4))]
-                    : [],
+                border: Border.all(color: isSelected ? jimlineNavy : Colors.grey[200]!, width: 1.5),
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    _categories[index]["icon"],
-                    color: isSelected ? Colors.white : Colors.grey[600],
-                    size: 30,
-                  ),
+                  Icon(_categories[index]["icon"], color: isSelected ? Colors.white : Colors.grey[600], size: 30),
                   const SizedBox(height: 8),
-                  Text(
-                    _categories[index]["name"],
-                    style: TextStyle(
-                      color: isSelected ? Colors.white : Colors.grey[800],
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                      fontSize: 13,
-                    ),
-                  ),
+                  Text(_categories[index]["name"], style: TextStyle(color: isSelected ? Colors.white : Colors.black, fontSize: 13)),
                 ],
               ),
             ),
@@ -191,16 +218,10 @@ class _ShipperHomeViewState extends State<ShipperHomeView> {
       children: [
         Icon(icon, color: color, size: 20),
         const SizedBox(width: 12),
-        Expanded(
-          child: TextField(
-            decoration: InputDecoration(
-              hintText: hint,
-              border: InputBorder.none,
-              hintStyle: TextStyle(color: Colors.grey[400], fontSize: 16),
-            ),
-          ),
-        ),
+        Expanded(child: TextField(decoration: InputDecoration(hintText: hint, border: InputBorder.none))),
       ],
     );
+
+
   }
 }

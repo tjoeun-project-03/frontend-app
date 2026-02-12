@@ -8,7 +8,9 @@ class RoleSelectionView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final selectedRole = ref.watch(signupViewModelProvider);
+    final signupState = ref.watch(signupViewModelProvider);
+    final selectedRole = signupState.selectedRole;
+
     const Color primaryNavy = Color(0xFF1A237E);
 
     return Scaffold(

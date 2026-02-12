@@ -8,6 +8,8 @@ import '../views/auth/roleSelectionView.dart';
 import '../views/auth/signupView.dart';
 import '../views/auth/licenseCameraView.dart';
 import '../views/shipper/shipperHomeView.dart';
+import '../views/shipper/shipperNavControllerView.dart';
+import '../views/shipper/shipperPaymentView.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -35,8 +37,19 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
           path: '/shipper-home',
-          builder: (context, state) => const ShipperHomeView(),
+          builder: (context, state) => const ShopperNavController(),
       ),
+      GoRoute(
+          path: '/shipper-payment',
+          builder: (context, state) {
+            final extra = state.extra as Map<String, dynamic>;
+
+            return ShipperPaymentView(
+                weight: extra['weight'] as double,
+                price: extra['price'] as int,
+            );
+          }
+          )
     ],
   );
 });

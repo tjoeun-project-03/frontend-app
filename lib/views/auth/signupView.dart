@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../../viewmodels/auth/signup_vm.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../widgets/driverAuthModal.dart';
+import 'package:daum_postcode_view/daum_postcode_view.dart';
 
 class SignupView extends ConsumerStatefulWidget {
   const SignupView({super.key});
@@ -18,11 +19,15 @@ class _SignupViewState extends ConsumerState<SignupView> {
   final _idController = TextEditingController();
   final _passwordController = TextEditingController();
   final _emailController = TextEditingController();
+
+  final _postcodeController = TextEditingController();
   final _addressController = TextEditingController();
+  final _detailAddressController = TextEditingController();
 
   // 상태 변수
   String _selectedGender = "";
-  bool _obscurePassword = true; // 비밀번호 숨김 상태
+  bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true; // 추가
 
   final Color jimlineNavy = const Color(0xFF1A2B88);
 
@@ -33,12 +38,42 @@ class _SignupViewState extends ConsumerState<SignupView> {
     _idController.dispose();
     _passwordController.dispose();
     _emailController.dispose();
+    _postcodeController.dispose();
     _addressController.dispose();
+    _detailAddressController.dispose();
     super.dispose();
+  }
+
+  // 텍스트가 바뀔 때마다 VM에 알려 유효성 업데이트
+  void _onInputChanged() {
+    ref.read(signupViewModelProvider.notifier).validateForm(
+      name: _nameController.text,
+      phone: _phoneController.text,
+      id: _idController.text,
+      password: _passwordController.text,
+      address: _addressController.text,
+    );
+  }
+
+  void _searchAddress() async {
+    final dynamic result = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const AddressSearchPage()),
+    );
+
+    if (result != null) {
+      setState(() {
+        _postcodeController.text = result.zonecode;
+        _addressController.text = result.address;
+      });
+      _onInputChanged(); // 주소 입력 후 유효성 갱신
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final signupState = ref.watch(signupViewModelProvider);
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -61,17 +96,14 @@ class _SignupViewState extends ConsumerState<SignupView> {
               const Text("짐라인(JimLine)의 원활한 운송 서비스를 위해\n상세 정보를 입력해주세요.", style: TextStyle(fontSize: 14, color: Colors.black)),
               const SizedBox(height: 32),
 
-              // 1. 이름
               _buildLabel("이름"),
-              _buildTextField(_nameController, "성함을 입력해주세요"),
+              _buildTextField(_nameController, "성함을 입력해주세요", onChanged: (_) => _onInputChanged()),
               const SizedBox(height: 24),
 
-              // 2. 전화번호
               _buildLabel("전화번호"),
-              _buildTextField(_phoneController, "010-0000-0000", keyboardType: TextInputType.phone),
+              _buildTextField(_phoneController, "010-0000-0000", keyboardType: TextInputType.phone, onChanged: (_) => _onInputChanged()),
               const SizedBox(height: 24),
 
-              // 3. 성별
               _buildLabel("성별"),
               Row(
                 children: [
@@ -82,68 +114,80 @@ class _SignupViewState extends ConsumerState<SignupView> {
               ),
               const SizedBox(height: 24),
 
-              // 4. 아이디 (중복 확인 버튼 포함)
               _buildLabel("아이디"),
               Row(
                 children: [
-                  Expanded(child: _buildTextField(_idController, "아이디 입력 (8자 이상)")),
+                  Expanded(child: _buildTextField(_idController, "아이디 입력 (8자 이상)", onChanged: (_) => _onInputChanged())),
                   const SizedBox(width: 12),
-                  SizedBox(
-                    height: 56,
-                    child: OutlinedButton(
-                      onPressed: () {
-                        // TODO: 아이디 중복 확인 로직
-                      },
-                      style: OutlinedButton.styleFrom(
-                        side: BorderSide(color: jimlineNavy),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                      ),
-                      child: Text("중복 확인", style: TextStyle(color: jimlineNavy, fontWeight: FontWeight.bold)),
-                    ),
-                  ),
+                  _buildSideButton("중복 확인", onPressed: () {
+                    // TODO: 아이디 중복 확인 로직
+                  }),
                 ],
               ),
               const SizedBox(height: 24),
 
-              // 5. 비밀번호 (눈 아이콘 토글 포함)
+              // 비밀번호
               _buildLabel("비밀번호"),
-              TextField(
-                controller: _passwordController,
-                obscureText: _obscurePassword,
-                decoration: _inputDecoration("영문, 숫자 포함 8자 이상").copyWith(
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                      color: Colors.grey,
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _passwordController,
+                      obscureText: _obscurePassword,
+                      onChanged: (_) => _onInputChanged(),
+                      decoration: _inputDecoration("영문, 숫자 포함 8자 이상").copyWith(
+                        suffixIcon: IconButton(
+                          icon: Icon(_obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined, color: Colors.grey),
+                          onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                        ),
+                      ),
                     ),
-                    onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
                   ),
-                ),
+                  const SizedBox(width: 12),
+                  _buildSideButton("중복 확인", onPressed: () {
+                    ref.read(signupViewModelProvider.notifier).checkPasswordDuplication(_passwordController.text);
+                  }),
+                ],
               ),
+
+              // 중복 확인 완료 시 메시지 표시
+              if (signupState.isPasswordChecked)
+                const Padding(
+                  padding: EdgeInsets.only(top: 8, left: 4),
+                  child: Text("✅ 사용 가능한 비밀번호입니다.", style: TextStyle(color: Colors.green, fontSize: 13)),
+                ),
               const SizedBox(height: 24),
 
-              // 6. 이메일 주소
+
               _buildLabel("이메일 주소"),
               _buildTextField(_emailController, "example@jimline.com", keyboardType: TextInputType.emailAddress),
               const SizedBox(height: 24),
 
-
+              _buildLabel("주소 설정"),
+              Row(
+                children: [
+                  Expanded(child: _buildTextField(_postcodeController, "우편번호", readOnly: true)),
+                  const SizedBox(width: 12),
+                  _buildSideButton("주소 찾기", onPressed: _searchAddress),
+                ],
+              ),
+              const SizedBox(height: 12),
+              _buildTextField(_addressController, "주소", readOnly: true),
+              const SizedBox(height: 12),
+              _buildTextField(_detailAddressController, "상세 주소"),
               const SizedBox(height: 48),
 
-              // 가입 완료 버튼
+              // 가입 완료 버튼 (유효성 상태에 따라 활성화/비활성화)
               ElevatedButton(
-                onPressed: () {
-                  final selectedRole = ref.read(signupViewModelProvider); // 현재 선택된 역할 확인
-
-                  if(selectedRole == UserRole.driver) {
-                    // 차주인 경우 모달 띄우기
+                onPressed: signupState.isFormValid ? () {
+                  if(signupState.selectedRole == UserRole.driver) {
                     DriverAuthModal.show(context);
                   } else {
                     context.go('/shipper-home');
                   }
-                },
+                } : null,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: jimlineNavy,
+                  backgroundColor: signupState.isFormValid ? jimlineNavy : Colors.grey[400],
                   foregroundColor: Colors.white,
                   minimumSize: const Size(double.infinity, 60),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -159,12 +203,26 @@ class _SignupViewState extends ConsumerState<SignupView> {
     );
   }
 
-  // --- 소형 위젯 모듈화 ---
-
+  // --- 공통 헬퍼 위젯 ---
   Widget _buildLabel(String text) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Text(text, style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: jimlineNavy)),
+    );
+  }
+
+  // 공통 사이드 버튼 (중복확인, 일치확인, 주소찾기 디자인 통일)
+  Widget _buildSideButton(String text, {required VoidCallback onPressed}) {
+    return SizedBox(
+      height: 56,
+      child: OutlinedButton(
+        onPressed: onPressed,
+        style: OutlinedButton.styleFrom(
+          side: BorderSide(color: jimlineNavy),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+        child: Text(text, style: TextStyle(color: jimlineNavy, fontWeight: FontWeight.bold)),
+      ),
     );
   }
 
@@ -186,10 +244,12 @@ class _SignupViewState extends ConsumerState<SignupView> {
     );
   }
 
-  Widget _buildTextField(TextEditingController controller, String hint, {TextInputType? keyboardType}) {
+  Widget _buildTextField(TextEditingController controller, String hint, {TextInputType? keyboardType, bool readOnly = false, Function(String)? onChanged}) {
     return TextField(
       controller: controller,
       keyboardType: keyboardType,
+      readOnly: readOnly,
+      onChanged: onChanged,
       decoration: _inputDecoration(hint),
     );
   }
@@ -204,12 +264,28 @@ class _SignupViewState extends ConsumerState<SignupView> {
         padding: const EdgeInsets.symmetric(vertical: 16),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
-      child: Text(
-        gender,
-        style: TextStyle(
-          color: isSelected ? Colors.white : Colors.grey[600],
-          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-        ),
+      child: Text(gender, style: TextStyle(color: isSelected ? Colors.white : Colors.grey[600], fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
+    );
+  }
+}
+
+// 주소 검색 페이지 위젯
+class AddressSearchPage extends StatelessWidget {
+  const AddressSearchPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("주소 검색"),
+        backgroundColor: Colors.white,
+        foregroundColor: const Color(0xFF1A2B88),
+        elevation: 0,
+      ),
+      body: DaumPostcodeView(
+        onComplete: (model) {
+          Navigator.pop(context, model);
+        },
       ),
     );
   }
