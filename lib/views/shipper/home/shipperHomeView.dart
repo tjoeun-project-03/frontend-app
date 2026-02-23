@@ -27,18 +27,16 @@ class _ShipperHomeViewState extends State<ShipperHomeView> {
     // 무게에 따른 가상 가격 계산 로직 (예시 : 톤당 5만원 + 기본료 3만원)
     int estimatedPrice = (_estimatedWeight * 50000 + 30000).toInt();
 
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 60), // 상태바 영역 확보
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16),
-            child: Text(
-              "운송 예약",
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF1A2B88)),
-            ),
-          ),
+    return Scaffold(
+        backgroundColor: Colors.white,
+        body: SingleChildScrollView(
+          // 이 부분을 추가하면 스크롤 영역이 명확해집니다.
+          physics: const BouncingScrollPhysics(),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 기존 "운송 예약" 텍스트와 불필요한 여백은 삭제했습니다.
+              const SizedBox(height: 10),
 
           // 상단 검색 카드
           Padding(
@@ -138,34 +136,36 @@ class _ShipperHomeViewState extends State<ShipperHomeView> {
 
           // 예약 버튼
           Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: ElevatedButton(
-              onPressed: () {
-                // 결제 화면으로 이동하면서 현재 설정된 무게와 계산된 가격 전달
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => ShipperPaymentView(
-                      weight: _estimatedWeight,
-                      price: (_estimatedWeight * 50000 + 30000).toInt(), // 견적 로직과 동일하게 설정
+              padding: const EdgeInsets.all(16.0),
+              child: ElevatedButton(
+                onPressed: () {
+                  // 결제 화면으로 이동하면서 현재 설정된 무게와 계산된 가격 전달
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ShipperPaymentView(
+                        weight: _estimatedWeight,
+                        price: (_estimatedWeight * 50000 + 30000).toInt(), // 견적 로직과 동일하게 설정
+                      ),
                     ),
-                  ),
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: jimlineNavy,
-                foregroundColor: Colors.white,
-                minimumSize: const Size(double.infinity, 60),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              child: const Text("운송 예약하기", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            )
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: jimlineNavy,
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size(double.infinity, 60),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: const Text("운송 예약하기", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              )
           ),
           const SizedBox(height: 40),
         ],
       ),
+    ),
     );
   }
+
 
   // 가격 행을 만드는 헬퍼 위젯
   Widget _buildPriceRow(String label, String price) {
@@ -221,7 +221,6 @@ class _ShipperHomeViewState extends State<ShipperHomeView> {
         Expanded(child: TextField(decoration: InputDecoration(hintText: hint, border: InputBorder.none))),
       ],
     );
-
 
   }
 }

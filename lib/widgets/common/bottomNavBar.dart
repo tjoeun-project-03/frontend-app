@@ -24,7 +24,6 @@ class JimlineBottomNavBar extends StatelessWidget {
       items: const [
         BottomNavigationBarItem(icon: Icon(Icons.home), label: '홈'),
         BottomNavigationBarItem(icon: Icon(Icons.local_shipping), label: '운송 관리'),
-        BottomNavigationBarItem(icon: Icon(Icons.history), label: '내역'),
         BottomNavigationBarItem(icon: Icon(Icons.person), label: '마이'),
       ],
     );

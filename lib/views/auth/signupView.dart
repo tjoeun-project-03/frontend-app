@@ -91,7 +91,7 @@ class _SignupViewState extends ConsumerState<SignupView> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text("반가워요!🖐️", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: jimlineNavy)),
+              Text("반가워요🖐️", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: jimlineNavy)),
               const SizedBox(height: 8),
               const Text("짐라인(JimLine)의 원활한 운송 서비스를 위해\n상세 정보를 입력해주세요.", style: TextStyle(fontSize: 14, color: Colors.black)),
               const SizedBox(height: 32),

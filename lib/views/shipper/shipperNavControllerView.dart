@@ -1,41 +1,56 @@
 import 'package:flutter/material.dart';
-import 'shipperHomeView.dart';
-import 'shipperMyView.dart';
+import '../shipper/home/shipperHomeView.dart';
+import '../shipper/mypage/shipperMyView.dart';
+import '../shipper/tracking/shipperHistoryTrackingView.dart';
 import '../../widgets/common/bottomNavBar.dart';
 
-class ShopperNavController extends StatefulWidget {
-  const ShopperNavController({super.key});
+class ShipperNavController extends StatefulWidget {
+  const ShipperNavController({super.key});
 
   @override
-  State<ShopperNavController> createState() => _ShopperNavControllerState();
+  State<ShipperNavController> createState() => _ShipperNavControllerState();
 }
 
-class _ShopperNavControllerState extends State<ShopperNavController> {
+class _ShipperNavControllerState extends State<ShipperNavController> {
   int _selectedIndex = 0;
 
-  // 네비게이션으로 전환할 화면들
-  final List<Widget> _pages = [
-    const ShipperHomeView(), // 홈 (운송 예약)
-    const Center(child: Text("운송 현황")),
-    const Center(child: Text("기록")),
-    const ShipperMyView(),   // 마이페이지
-  ];
+  // 원래 기획대로 3개의 타이틀 유지
+  final List<String> _titles = ["운송 예약", "이용 내역 및 운송 추적", "마이페이지"];
+
+  Widget _getSelectedPage(int index) {
+    switch (index) {
+      case 0: return const ShipperHomeView();
+      case 1: return const ShipperHistoryTrackingView();
+      case 2: return const ShipperMyView();
+      default: return const ShipperHomeView();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    const Color jimlineNavy = Color(0xFF1A2B88);
+
     return Scaffold(
-      // IndexedStack을 쓰면 페이지 이동 시에도 입력 중이던 데이터가 유지됩니다.
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: _pages,
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        title: Text(_titles[_selectedIndex],
+            style: const TextStyle(color: jimlineNavy, fontWeight: FontWeight.bold)),
+        centerTitle: true,
+        backgroundColor: Colors.white,
+        elevation: 0,
       ),
-      // 디자인 위젯 연결
+      body: SafeArea(
+        child: _getSelectedPage(_selectedIndex),
+      ),
       bottomNavigationBar: JimlineBottomNavBar(
         currentIndex: _selectedIndex,
         onTap: (index) {
-          setState(() {
-            _selectedIndex = index;
-          });
+          // 네비바의 인덱스가 3개를 넘어가지 않도록 안전장치
+          if (index < _titles.length) {
+            setState(() {
+              _selectedIndex = index;
+            });
+          }
         },
       ),
     );
