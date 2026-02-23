@@ -37,7 +37,7 @@ class RoleSelectionView extends ConsumerWidget {
             const Text("반갑습니다!", style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: primaryNavy)),
             const Text("어떤 목적으로 이용하시나요?", style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: primaryNavy)),
             const SizedBox(height: 12),
-            const Text("회원 유형에 따라 맞춤 서비스를 제공합니다.", style: TextStyle(color: Colors.grey, fontSize: 16)),
+            const Text("회원 유형에 따라 맞춤 서비스를 제공합니다.", style: TextStyle(color: Colors.black, fontSize: 16)),
             const SizedBox(height: 40),
 
             // 화주 선택 카드

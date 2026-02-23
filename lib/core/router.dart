@@ -7,9 +7,9 @@ import '../views/auth/loginView.dart';
 import '../views/auth/roleSelectionView.dart';
 import '../views/auth/signupView.dart';
 import '../views/auth/licenseCameraView.dart';
-import '../views/shipper/shipperHomeView.dart';
+import '../views/shipper/home/shipperHomeView.dart';
 import '../views/shipper/shipperNavControllerView.dart';
-import '../views/shipper/shipperPaymentView.dart';
+import '../views/shipper/home/shipperPaymentView.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -37,7 +37,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
           path: '/shipper-home',
-          builder: (context, state) => const ShopperNavController(),
+          builder: (context, state) => const ShipperNavController(),
       ),
       GoRoute(
           path: '/shipper-payment',

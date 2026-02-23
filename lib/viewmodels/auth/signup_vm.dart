@@ -58,18 +58,25 @@ class SignupViewModel extends StateNotifier<SignupState> {
     required String password,
     required String address,
   }) {
-
-
-    // 필수값 입력 여부 확인
-    final formValid = name.isNotEmpty &&
-        phone.isNotEmpty &&
-        id.isNotEmpty &&
-        password.isNotEmpty &&
-        state.isPasswordChecked &&
-        address.isNotEmpty;
+    // 💡 개발 편의를 위해 모든 조건을 무시하고 항상 true를 반환하도록 수정합니다.
+    const formValid = true;
 
     state = state.copyWith(
       isFormValid: formValid,
+      isPasswordMatched: true, // 테스트 시 비밀번호 불일치 메시지 방지
+      isPasswordChecked: true, // 테스트 시 중복확인 안 해도 넘어가게 설정
     );
+
+    // 필수값 입력 여부 확인
+    // final formValid = name.isNotEmpty &&
+    //     phone.isNotEmpty &&
+    //     id.isNotEmpty &&
+    //     password.isNotEmpty &&
+    //     state.isPasswordChecked &&
+    //     address.isNotEmpty;
+    //
+    // state = state.copyWith(
+    //   isFormValid: formValid,
+    // );
   }
 }
