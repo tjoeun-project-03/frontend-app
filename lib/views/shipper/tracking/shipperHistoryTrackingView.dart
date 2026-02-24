@@ -175,7 +175,7 @@ class ShipperHistoryTrackingView extends ConsumerWidget {
                         ],
                       ),
                     ),
-                    // ✅ 해결: ElevatedButton의 무한 너비 에러(infinite width)를 방지하기 위해 SizedBox로 크기 제한
+                    // 해결: ElevatedButton의 무한 너비 에러(infinite width)를 방지하기 위해 SizedBox로 크기 제한
                     SizedBox(
                       height: 32,
                       width: 80,
@@ -210,7 +210,7 @@ class ShipperHistoryTrackingView extends ConsumerWidget {
         children: [
           Text("운송현황", style: TextStyle(fontWeight: FontWeight.bold, color: color, fontSize: 14)),
           const SizedBox(height: 20),
-          // ✅ 루프를 돌려 타임라인 생성
+          // 루프를 돌려 타임라인 생성
           for (int i = 0; i < timelines.length; i++)
             _buildTimelineItem(
               timelines[i].title ?? "",
@@ -231,7 +231,7 @@ class ShipperHistoryTrackingView extends ConsumerWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // ✅ 해결: IntrinsicHeight 에러(Missing size)를 피하기 위해 고정 높이 Column 사용
+        // 해결: IntrinsicHeight 에러(Missing size)를 피하기 위해 고정 높이 Column 사용
         Column(
           children: [
             Icon(

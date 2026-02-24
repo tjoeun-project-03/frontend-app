@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:camera/camera.dart';
 import 'app.dart';
+import 'services/common/notification_service.dart';
+
+// 앱 어디서든 접근 가능한 전역 네비게이터 키 생성
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 // 사용 가능한 카메라 목록을 전역변수로 관리
 late List<CameraDescription> cameras;
@@ -12,6 +16,9 @@ Future<void> main() async {
 
   // 2. 사용 가능한 카메라 장치 목록 가져오기
   cameras = await availableCameras();
+
+  // 알림 서비스 초기화
+  await NotificationService().init();
 
   runApp(
     const ProviderScope(
