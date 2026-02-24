@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../main.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:path/path.dart';
@@ -10,9 +11,11 @@ import '../views/auth/licenseCameraView.dart';
 import '../views/shipper/home/shipperHomeView.dart';
 import '../views/shipper/shipperNavControllerView.dart';
 import '../views/shipper/home/shipperPaymentView.dart';
+import '../views/shipper/tracking/shipperEvaluationView.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
+    navigatorKey: navigatorKey, // 라우터에 전역 키를 심어줌
     initialLocation: '/start', // 앱 실행 시 첫 화면
     routes: [
       GoRoute(
@@ -49,7 +52,11 @@ final routerProvider = Provider<GoRouter>((ref) {
                 price: extra['price'] as int,
             );
           }
-          )
+          ),
+      GoRoute(
+        path: '/evaluation',
+        builder: (context, state) => const ShipperEvaluationView(),
+      ),
     ],
   );
 });

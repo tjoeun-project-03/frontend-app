@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/shipper/tracking_model.dart';
+import '../../services/common/notification_service.dart';
 
 class TrackingState {
   final int selectedTabIndex;
@@ -32,11 +33,17 @@ class TrackingViewModel extends StateNotifier<TrackingState> {
         TimelineItemData(title: "배차 완료", time: "02월 14일 오전 09:00", isDone: true),
         TimelineItemData(title: "상차 완료", time: "02월 14일 오전 11:30", isDone: true),
         TimelineItemData(title: "운송중", time: "02월 16일 오전 11:30", isDone: true, isCurrent: true),
-        TimelineItemData(title: "하차 예정", time: "오늘 오후 16:30 도착 예정", isDone: false),
+        TimelineItemData(title: "하차 완료", time: "오늘 오후 16:30 예정", isDone: true),
       ],
     );
     // 데이터 먼저 주입 후 로딩 해제
     state = state.copyWith(data: mockData, isLoading: false);
+
+    // 데이터 로드 후 하차 완료(isDone: true) 상태이면 알림 발송
+    if (mockData.timelines.any((item) => item.title == "하차 완료" && item.isDone)) {
+      NotificationService().showDeliveryCompleteNotification();
+    }
+
   }
 
   void changeTab(int index) => state = state.copyWith(selectedTabIndex: index);
