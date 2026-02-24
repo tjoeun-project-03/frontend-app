@@ -104,9 +104,6 @@ unlinked_spec.ds
 **/linux/flutter/generated_plugin_registrant.h
 **/linux/flutter/generated_plugins.cmake
 
-# API Keys and Secrets
-lib/config/secrets.dart
-
 # Coverage
 coverage/
 
@@ -120,3 +117,8 @@ app.*.symbols
 !**/ios/**/default.perspectivev3
 !/packages/flutter_tools/test/data/dart_dependencies_test/**/.packages
 !/dev/ci/**/Gemfile.lock
+
+# env
+*.env
+
+
