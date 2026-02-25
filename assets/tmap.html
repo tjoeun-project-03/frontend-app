@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <script src="https://apis.openapi.sk.com/tmap/jsv2?version=1&appKey="></script>
+    <style>
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; }
+        #map_div { width: 100%; height: 100%; }
+    </style>
+</head>
+<body onload="initTmap()">
+<div id="map_div"></div>
+<script>
+    var map;
+    var markers = {};
+
+    function initTmap() {
+        map = new Tmapv2.Map("map_div", {
+            center: new Tmapv2.LatLng(37.5665, 126.9780),
+            width: "100%", height: "100%", zoom: 15
+        });
+    }
+
+    function setMarker(lat, lon, type) {
+        var position = new Tmapv2.LatLng(lat, lon);
+
+        // 기존 해당 타입 마커 제거
+        if (markers[type]) markers[type].setMap(null);
+
+        // 마커 생성 (보안을 위해 https 아이콘 사용)
+        var iconUrl = type === 'start'
+            ? "https://tmapapi.sktelecom.com/upload/tmap/marker/pin_b_m_s.png"
+            : "https://tmapapi.sktelecom.com/upload/tmap/marker/pin_b_m_e.png";
+
+        markers[type] = new Tmapv2.Marker({
+            position: position,
+            map: map,
+            icon: iconUrl,
+            iconSize: new Tmapv2.Size(34, 44)
+        });
+
+        // 🗺️ 핵심 수정: 출발지든 도착지든 무조건 해당 위치로 줌인!
+        // fitBounds 로직을 제거하거나 주석 처리하여 전국 지도로 변하는 걸 막습니다.
+        map.setCenter(position);
+        map.setZoom(16); // 16 레벨로 상세 확대
+    }
+</script>
+</body>
+</html>
