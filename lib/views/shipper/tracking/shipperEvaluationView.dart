@@ -8,7 +8,7 @@ class ShipperEvaluationView extends StatefulWidget {
 }
 
 class _ShipperEvaluationViewState extends State<ShipperEvaluationView> {
-  int _rating = 4;
+  int _rating = 0;
   final List<String> _selectedTags = [];
 
   @override
