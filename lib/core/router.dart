@@ -45,11 +45,13 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
           path: '/shipper-payment',
           builder: (context, state) {
-            final extra = state.extra as Map<String, dynamic>;
-
+            final data = state.extra as Map<String, dynamic>;
             return ShipperPaymentView(
-                weight: extra['weight'] as double,
-                price: extra['price'] as int,
+              weight: data['weight'] as double,
+              price: data['price'] as int,
+              startAddress: data['startAddress'] as String, // 🚀 새로 추가된 필수 값들
+              endAddress: data['endAddress'] as String,
+              category: data['category'] as String,
             );
           }
           ),
