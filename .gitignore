@@ -121,4 +121,7 @@ app.*.symbols
 # env
 *.env
 
+assets/tmap.html
+.env
+
 
