@@ -13,22 +13,24 @@
 <div id="map_div"></div>
 <script>
     var map;
-    var markers = {};
+    var markers = { start: null, end: null };
+    var polyline = null;
 
     function initTmap() {
         map = new Tmapv2.Map("map_div", {
             center: new Tmapv2.LatLng(37.5665, 126.9780),
-            width: "100%", height: "100%", zoom: 15
+            width: "100%",
+            height: "100%",
+            zoom: 15,
+            zoomControl: true, // 🚀 지도에 확대/축소 버튼 표시 추가
+            scrollwheel: true  // 마우스 휠 및 줌 동작 허용
         });
     }
 
     function setMarker(lat, lon, type) {
         var position = new Tmapv2.LatLng(lat, lon);
-
-        // 기존 해당 타입 마커 제거
         if (markers[type]) markers[type].setMap(null);
 
-        // 마커 생성 (보안을 위해 https 아이콘 사용)
         var iconUrl = type === 'start'
             ? "https://tmapapi.sktelecom.com/upload/tmap/marker/pin_b_m_s.png"
             : "https://tmapapi.sktelecom.com/upload/tmap/marker/pin_b_m_e.png";
@@ -40,10 +42,52 @@
             iconSize: new Tmapv2.Size(34, 44)
         });
 
-        // 🗺️ 핵심 수정: 출발지든 도착지든 무조건 해당 위치로 줌인!
-        // fitBounds 로직을 제거하거나 주석 처리하여 전국 지도로 변하는 걸 막습니다.
         map.setCenter(position);
-        map.setZoom(16); // 16 레벨로 상세 확대
+    }
+
+    function drawRoute(sLat, sLng, eLat, eLng, apiKey) {
+        if (polyline) polyline.setMap(null);
+
+        var params = {
+            "startX": sLng, "startY": sLat,
+            "endX": eLng, "endY": eLat,
+            "reqCoordType": "WGS84GEO", "resCoordType": "WGS84GEO",
+            "searchOption": "0"
+        };
+
+        fetch("https://apis.openapi.sk.com/tmap/routes?version=1&format=json", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "appKey": apiKey },
+            body: JSON.stringify(params)
+        })
+        .then(response => response.json())
+        .then(data => {
+            var resultFeatures = data.features;
+            var lineArray = [];
+
+            for (var i in resultFeatures) {
+                var geometry = resultFeatures[i].geometry;
+                if (geometry.type == "LineString") {
+                    for (var j in geometry.coordinates) {
+                        lineArray.push(new Tmapv2.LatLng(geometry.coordinates[j][1], geometry.coordinates[j][0]));
+                    }
+                }
+            }
+
+            polyline = new Tmapv2.Polyline({
+                path: lineArray,
+                strokeColor: "#1A2B88",
+                strokeWeight: 6,
+                map: map
+            });
+
+            // 🚀 출발/도착지가 다 보이도록 자동 줌 조절
+            var bounds = new Tmapv2.LatLngBounds();
+            bounds.extend(new Tmapv2.LatLng(sLat, sLng));
+            bounds.extend(new Tmapv2.LatLng(eLat, eLng));
+            map.fitBounds(bounds);
+        })
+        .catch(err => console.log("경로 그리기 실패: ", err));
     }
 </script>
 </body>

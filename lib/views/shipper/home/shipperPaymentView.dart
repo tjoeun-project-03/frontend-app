@@ -4,11 +4,18 @@ import 'package:go_router/go_router.dart';
 class ShipperPaymentView extends StatelessWidget {
   final double weight;
   final int price;
+  // 🚀 추가된 필드들
+  final String startAddress;
+  final String endAddress;
+  final String category;
 
   const ShipperPaymentView({
     super.key,
     required this.weight,
     required this.price,
+    required this.startAddress,
+    required this.endAddress,
+    required this.category,
   });
 
   @override
@@ -22,7 +29,7 @@ class ShipperPaymentView extends StatelessWidget {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new, color: jimlineNavy),
-          onPressed: () => context.pop(),
+          onPressed: () => Navigator.pop(context), // 뒤로 가기
         ),
         title: const Text(
           "운송 신청 및 결제",
@@ -35,7 +42,7 @@ class ShipperPaymentView extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 1. 운송 요약 정보 카드
+            // 1. 운송 요약 정보 카드 (데이터 매핑 완료)
             const Text("운송 요약", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 12),
             Container(
@@ -46,11 +53,11 @@ class ShipperPaymentView extends StatelessWidget {
               ),
               child: Column(
                 children: [
-                  _buildSummaryRow("출발지", "서울시 강남구..."),
+                  _buildSummaryRow("출발지", startAddress), // 🚀 실제 주소
                   const SizedBox(height: 12),
-                  _buildSummaryRow("도착지", "부산시 해운대구..."),
+                  _buildSummaryRow("도착지", endAddress),   // 🚀 실제 주소
                   const SizedBox(height: 12),
-                  _buildSummaryRow("화물 정보", "박스 / ${weight.toStringAsFixed(1)} 톤"),
+                  _buildSummaryRow("화물 정보", "$category / ${weight.toStringAsFixed(1)} 톤"), // 🚀 실제 카테고리
                 ],
               ),
             ),
@@ -73,17 +80,13 @@ class ShipperPaymentView extends StatelessWidget {
                 border: Border.all(color: Colors.grey[200]!),
                 borderRadius: BorderRadius.circular(16),
               ),
-              child: Column(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text("총 결제 금액", style: TextStyle(fontSize: 16, color: Colors.grey)),
-                      Text(
-                        "${price.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}원",
-                        style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: jimlineNavy),
-                      ),
-                    ],
+                  const Text("총 결제 금액", style: TextStyle(fontSize: 16, color: Colors.grey)),
+                  Text(
+                    "${price.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}원",
+                    style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: jimlineNavy),
                   ),
                 ],
               ),
@@ -93,10 +96,7 @@ class ShipperPaymentView extends StatelessWidget {
 
             // 결제하기 버튼
             ElevatedButton(
-              onPressed: () {
-                // 결제 완료 로직 (차주 오더보드로 데이터 전송 API 호출 시점)
-                _showSuccessDialog(context);
-              },
+              onPressed: () => _showSuccessDialog(context),
               style: ElevatedButton.styleFrom(
                 backgroundColor: jimlineNavy,
                 foregroundColor: Colors.white,
@@ -111,6 +111,7 @@ class ShipperPaymentView extends StatelessWidget {
     );
   }
 
+  // 헬퍼 위젯들
   Widget _buildSummaryRow(String label, String value) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -153,8 +154,8 @@ class ShipperPaymentView extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () {
-              Navigator.pop(context); // 다이얼로그 닫기
-              context.go('/shipper-home'); // 홈으로 이동
+              Navigator.pop(context);
+              context.go('/shipper-home');
             },
             child: const Text("확인"),
           ),

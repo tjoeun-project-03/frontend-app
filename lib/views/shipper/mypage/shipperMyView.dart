@@ -1,19 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart'; // 추가
 import 'package:go_router/go_router.dart';
+import 'package:jimline/viewmodels/shipper/profile_vm.dart';
 
-class ShipperMyView extends StatelessWidget {
+// ConsumerWidget으로 변경하여 상태 감시
+class ShipperMyView extends ConsumerWidget {
   const ShipperMyView({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     const Color jimlineNavy = Color(0xFF1A2B88);
+    // 프로필 상태 구독
+    final profileState = ref.watch(profileViewModelProvider);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // 1. 프로필 섹션
+            // 1. 프로필 섹션 (실제 서버 데이터 반영)
             Container(
               color: Colors.white,
               padding: const EdgeInsets.all(24),
@@ -28,13 +33,15 @@ class ShipperMyView extends StatelessWidget {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        "사용자님",
-                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                      // 서버에서 가져온 사용자 이름 표시
+                      Text(
+                        "${profileState.userName}님",
+                        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 4),
+                      // 서버에서 가져온 이메일 표시
                       Text(
-                        "user@email.com",
+                        profileState.email,
                         style: TextStyle(color: Colors.grey[600], fontSize: 14),
                       ),
                     ],
@@ -91,11 +98,14 @@ class ShipperMyView extends StatelessWidget {
 
             const SizedBox(height: 40),
 
-            // --- 로그아웃 버튼 수정 부분 ---
+            // 4. 로그아웃 버튼 (서버 연동 기능 추가)
             TextButton(
-              onPressed: () {
-                // 시작 화면으로 이동
-                context.go('/start');
+              onPressed: () async {
+                final bool success = await ref.read(profileViewModelProvider.notifier).logout();
+                if (success && context.mounted) {
+                  // 토큰 삭제 후 로그인 첫 화면으로 이동
+                  context.go('/start');
+                }
               },
               child: const Text(
                   "로그아웃",
@@ -109,7 +119,7 @@ class ShipperMyView extends StatelessWidget {
     );
   }
 
-  // 기존 헬퍼 위젯들 (동일)
+  // 기존 헬퍼 위젯들
   Widget _buildSummaryItem(String label, String count) {
     return Column(
       children: [
