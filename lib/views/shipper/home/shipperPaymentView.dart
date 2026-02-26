@@ -28,8 +28,8 @@ class ShipperPaymentView extends ConsumerStatefulWidget {
 
 class _ShipperPaymentViewState extends ConsumerState<ShipperPaymentView> {
   // 수취인 정보를 위한 컨트롤러
-  final _nameController = TextEditingController(text: "송예림");
-  final _contactController = TextEditingController(text: "010-1234-5678");
+  final _nameController = TextEditingController();
+  final _contactController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -55,17 +55,29 @@ class _ShipperPaymentViewState extends ConsumerState<ShipperPaymentView> {
             // 1. 수취인 정보 입력
             const Text("수취인 정보", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 12),
-            TextField(controller: _nameController, decoration: const InputDecoration(labelText: "받는 사람 이름", border: OutlineInputBorder())),
-            const SizedBox(height: 8),
-            TextField(controller: _contactController, decoration: const InputDecoration(labelText: "연락처", border: OutlineInputBorder())),
-
-            const SizedBox(height: 24),
+            TextField(
+                controller: _nameController,
+                decoration: const InputDecoration(
+                    labelText: "받는 사람 이름",
+                    hintText: "홍길동",
+                    border: OutlineInputBorder()
+                )
+            ),
+            const SizedBox(height: 10),
+            TextField(
+                controller: _contactController,
+                decoration: const InputDecoration(
+                    labelText: "연락처",
+                    hintText: "예: 010-1234-5678",
+                    border: OutlineInputBorder()
+                )
+            ),
 
             // 2. 운송 요약 정보
             const Text("운송 요약", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 12),
             Container(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(15),
               decoration: BoxDecoration(color: const Color(0xFFF8F9FA), borderRadius: BorderRadius.circular(16)),
               child: Column(children: [
                 _buildSummaryRow("출발지", widget.startAddress),
@@ -174,7 +186,7 @@ class _ShipperPaymentViewState extends ConsumerState<ShipperPaymentView> {
   void _showSuccessDialog(BuildContext context) {
     showDialog(context: context, builder: (context) => AlertDialog(
       title: const Text("신청 완료"),
-      content: const Text("주문이 정상 신청되었습니다!"),
+      content: const Text("운송 예약이 정상 신청되었습니다!"),
       actions: [TextButton(onPressed: () => context.go('/shipper-home'), child: const Text("확인"))],
     ));
   }
