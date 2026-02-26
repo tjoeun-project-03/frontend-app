@@ -184,11 +184,25 @@ class _ShipperPaymentViewState extends ConsumerState<ShipperPaymentView> {
   }
 
   void _showSuccessDialog(BuildContext context) {
-    showDialog(context: context, builder: (context) => AlertDialog(
-      title: const Text("신청 완료"),
-      content: const Text("운송 예약이 정상 신청되었습니다!"),
-      actions: [TextButton(onPressed: () => context.go('/shipper-home'), child: const Text("확인"))],
-    ));
+    showDialog(
+      context: context,
+      barrierDismissible: false, // 확인을 눌러야만 닫히게 설정
+      builder: (dialogContext) => AlertDialog( // 🚀 이름을 dialogContext로 바꿔서 구분!
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text("신청 완료"),
+        content: const Text("운송 예약이 정상 신청되었습니다!"),
+        actions: [
+          TextButton(
+            onPressed: () {
+              // 1. 먼저 열려있는 다이얼로그를 닫습니다.
+              Navigator.of(dialogContext).pop();
+              context.go('/shipper-home');
+            },
+            child: const Text("확인", style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildSummaryRow(String label, String value) => Padding(

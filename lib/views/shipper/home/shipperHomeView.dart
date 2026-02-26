@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:http/http.dart' as http;
+import 'package:go_router/go_router.dart';
 import 'shipperPaymentView.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart'; // 🚀 제스처 인식을 위해 필수
@@ -340,24 +341,23 @@ class _ShipperHomeViewState extends State<ShipperHomeView> {
           onPressed: () {
             // 🚀 견적 가격이 있을 때만 결제 페이지로 이동
             if (_serverPrice > 0) {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => ShipperPaymentView(
-                    weight: _estimatedWeight,
-                    price: _serverPrice,
-                    startAddress: _startController.text, // 출발지 주소
-                    endAddress: _endController.text,     // 도착지 주소
-                    category: _selectedCategory ?? "기타", // 화물 종류
-                    // 🚀 스프링 서버 저장을 위해 추가로 전달하는 데이터
-                    distance: _distance,
-                    duration: _duration,
-                    startLat: startLat.toString(),
-                    startLng: startLng.toString(),
-                    endLat: endLat.toString(),
-                    endLng: endLng.toString(),
-                  ),
-                ),
+              // 💡 Navigator.push 대신 GoRouter의 context.push를 사용합니다.
+              // 💡 데이터를 'extra'라는 바구니에 담아서 한 번에 보냅니다.
+              context.push(
+                '/shipper-payment',
+                extra: {
+                  'weight': _estimatedWeight,
+                  'price': _serverPrice,
+                  'startAddress': _startController.text,
+                  'endAddress': _endController.text,
+                  'category': _selectedCategory ?? "기타",
+                  'distance': _distance,
+                  'duration': _duration,
+                  'startLat': startLat.toString(),
+                  'startLng': startLng.toString(),
+                  'endLat': endLat.toString(),
+                  'endLng': endLng.toString(),
+                },
               );
             } else {
               ScaffoldMessenger.of(context).showSnackBar(
