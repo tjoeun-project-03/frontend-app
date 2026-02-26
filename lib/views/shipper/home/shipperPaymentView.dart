@@ -1,40 +1,50 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:jimline/viewmodels/shipper/order_vm.dart';
 
-class ShipperPaymentView extends StatelessWidget {
+class ShipperPaymentView extends ConsumerStatefulWidget {
   final double weight;
   final int price;
-  // 🚀 추가된 필드들
   final String startAddress;
   final String endAddress;
   final String category;
+  final double distance;
+  final int duration;
+  final String startLat, startLng, endLat, endLng;
 
   const ShipperPaymentView({
     super.key,
-    required this.weight,
-    required this.price,
-    required this.startAddress,
-    required this.endAddress,
-    required this.category,
+    required this.weight, required this.price,
+    required this.startAddress, required this.endAddress,
+    required this.category, required this.distance,
+    required this.duration, required this.startLat,
+    required this.startLng, required this.endLat, required this.endLng,
   });
+
+  @override
+  ConsumerState<ShipperPaymentView> createState() => _ShipperPaymentViewState();
+}
+
+class _ShipperPaymentViewState extends ConsumerState<ShipperPaymentView> {
+  // 수취인 정보를 위한 컨트롤러
+  final _nameController = TextEditingController(text: "송예림");
+  final _contactController = TextEditingController(text: "010-1234-5678");
 
   @override
   Widget build(BuildContext context) {
     const Color jimlineNavy = Color(0xFF1A2B88);
+    final isLoading = ref.watch(orderViewModelProvider);
 
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
+        backgroundColor: Colors.white, elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new, color: jimlineNavy),
-          onPressed: () => Navigator.pop(context), // 뒤로 가기
+          onPressed: () => context.pop(),
         ),
-        title: const Text(
-          "운송 신청 및 결제",
-          style: TextStyle(color: jimlineNavy, fontWeight: FontWeight.bold),
-        ),
+        title: const Text("운송 신청 및 결제", style: TextStyle(color: jimlineNavy, fontWeight: FontWeight.bold)),
         centerTitle: true,
       ),
       body: SingleChildScrollView(
@@ -42,38 +52,41 @@ class ShipperPaymentView extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 1. 운송 요약 정보 카드 (데이터 매핑 완료)
+            // 1. 수취인 정보 입력
+            const Text("수취인 정보", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 12),
+            TextField(controller: _nameController, decoration: const InputDecoration(labelText: "받는 사람 이름", border: OutlineInputBorder())),
+            const SizedBox(height: 8),
+            TextField(controller: _contactController, decoration: const InputDecoration(labelText: "연락처", border: OutlineInputBorder())),
+
+            const SizedBox(height: 24),
+
+            // 2. 운송 요약 정보
             const Text("운송 요약", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF8F9FA),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Column(
-                children: [
-                  _buildSummaryRow("출발지", startAddress), // 🚀 실제 주소
-                  const SizedBox(height: 12),
-                  _buildSummaryRow("도착지", endAddress),   // 🚀 실제 주소
-                  const SizedBox(height: 12),
-                  _buildSummaryRow("화물 정보", "$category / ${weight.toStringAsFixed(1)} 톤"), // 🚀 실제 카테고리
-                ],
-              ),
+              decoration: BoxDecoration(color: const Color(0xFFF8F9FA), borderRadius: BorderRadius.circular(16)),
+              child: Column(children: [
+                _buildSummaryRow("출발지", widget.startAddress),
+                _buildSummaryRow("도착지", widget.endAddress),
+                _buildSummaryRow("화물 정보", "${widget.category} / ${widget.weight.toStringAsFixed(1)} 톤"),
+                _buildSummaryRow("이동 거리", "${widget.distance.toStringAsFixed(1)} km"),
+              ]),
             ),
 
             const SizedBox(height: 32),
 
-            // 2. 결제 수단 선택
+            // 3. 🚀 복구된 결제 수단 선택 섹션
             const Text("결제 수단", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 12),
             _buildPaymentOption(Icons.credit_card, "신용/체크카드", true),
             _buildPaymentOption(Icons.account_balance_wallet, "계좌이체", false),
             _buildPaymentOption(Icons.payment, "간편결제 (짐라인페이)", false),
 
-            const SizedBox(height: 40),
+            const SizedBox(height: 32),
 
-            // 3. 최종 결제 금액 정보
+            // 4. 🚀 복구된 최종 결제 금액 섹션
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
@@ -85,7 +98,7 @@ class ShipperPaymentView extends StatelessWidget {
                 children: [
                   const Text("총 결제 금액", style: TextStyle(fontSize: 16, color: Colors.grey)),
                   Text(
-                    "${price.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}원",
+                    "${widget.price.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}원",
                     style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: jimlineNavy),
                   ),
                 ],
@@ -94,16 +107,17 @@ class ShipperPaymentView extends StatelessWidget {
 
             const SizedBox(height: 32),
 
-            // 결제하기 버튼
+            // 결제 및 신청 버튼
             ElevatedButton(
-              onPressed: () => _showSuccessDialog(context),
+              onPressed: isLoading ? null : _handleOrderSubmit,
               style: ElevatedButton.styleFrom(
                 backgroundColor: jimlineNavy,
-                foregroundColor: Colors.white,
                 minimumSize: const Size(double.infinity, 60),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
-              child: const Text("결제 및 운송 신청하기", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              child: isLoading
+                  ? const CircularProgressIndicator(color: Colors.white)
+                  : const Text("결제 및 운송 신청하기", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
             ),
           ],
         ),
@@ -111,17 +125,7 @@ class ShipperPaymentView extends StatelessWidget {
     );
   }
 
-  // 헬퍼 위젯들
-  Widget _buildSummaryRow(String label, String value) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(width: 60, child: Text(label, style: const TextStyle(color: Colors.grey))),
-        Expanded(child: Text(value, style: const TextStyle(fontWeight: FontWeight.w500))),
-      ],
-    );
-  }
-
+  // 결제 수단 옵션 빌더
   Widget _buildPaymentOption(IconData icon, String label, bool isSelected) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -143,24 +147,43 @@ class ShipperPaymentView extends StatelessWidget {
     );
   }
 
-  void _showSuccessDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text("신청 완료"),
-        content: const Text("운송 신청이 완료되었습니다.\n차주님이 배정되면 알림을 드릴게요!"),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              context.go('/shipper-home');
-            },
-            child: const Text("확인"),
-          ),
-        ],
-      ),
-    );
+  // 스프링 서버로 데이터 전송 실행
+  void _handleOrderSubmit() async {
+    final success = await ref.read(orderViewModelProvider.notifier).createOrder({
+      "price": widget.price,
+      "consigneeName": _nameController.text,
+      "consigneeContact": _contactController.text,
+      "departure": widget.startAddress,
+      "arrival": widget.endAddress,
+      "weight": widget.weight,
+      "content": widget.category,
+      "duration": widget.duration,
+      "distance": widget.distance,
+      "startLat": widget.startLat,
+      "startLng": widget.startLng,
+      "endLat": widget.endLat,
+      "endLng": widget.endLng,
+      "carType": widget.weight <= 1.0 ? "1t" : widget.weight <= 5.0 ? "5t" : "11t",
+    });
+
+    if (success && mounted) {
+      _showSuccessDialog(context);
+    }
   }
+
+  void _showSuccessDialog(BuildContext context) {
+    showDialog(context: context, builder: (context) => AlertDialog(
+      title: const Text("신청 완료"),
+      content: const Text("주문이 정상 저장되었습니다!"),
+      actions: [TextButton(onPressed: () => context.go('/shipper-home'), child: const Text("확인"))],
+    ));
+  }
+
+  Widget _buildSummaryRow(String label, String value) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 4),
+    child: Row(children: [
+      SizedBox(width: 60, child: Text(label, style: const TextStyle(color: Colors.grey))),
+      Expanded(child: Text(value, style: const TextStyle(fontWeight: FontWeight.w500)))
+    ]),
+  );
 }

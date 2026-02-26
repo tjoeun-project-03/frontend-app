@@ -343,16 +343,20 @@ class _ShipperHomeViewState extends State<ShipperHomeView> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) =>
-                      ShipperPaymentView(
-                        weight: _estimatedWeight,
-                        price: _serverPrice,
-                        startAddress: _startController.text,
-                        // 출발지 전달
-                        endAddress: _endController.text,
-                        // 도착지 전달
-                        category: _selectedCategory ?? "기타", // 화물 종류 전달
-                      ),
+                  builder: (context) => ShipperPaymentView(
+                    weight: _estimatedWeight,
+                    price: _serverPrice,
+                    startAddress: _startController.text, // 출발지 주소
+                    endAddress: _endController.text,     // 도착지 주소
+                    category: _selectedCategory ?? "기타", // 화물 종류
+                    // 🚀 스프링 서버 저장을 위해 추가로 전달하는 데이터
+                    distance: _distance,
+                    duration: _duration,
+                    startLat: startLat.toString(),
+                    startLng: startLng.toString(),
+                    endLat: endLat.toString(),
+                    endLng: endLng.toString(),
+                  ),
                 ),
               );
             } else {
@@ -372,6 +376,8 @@ class _ShipperHomeViewState extends State<ShipperHomeView> {
       ),
     );
   }
+
+
   String _mapWeightToCarType(double weight) {
     if (weight <= 1.0) return "1t";
     if (weight <= 5.0) return "5t";
