@@ -49,9 +49,16 @@ final routerProvider = Provider<GoRouter>((ref) {
             return ShipperPaymentView(
               weight: data['weight'] as double,
               price: data['price'] as int,
-              startAddress: data['startAddress'] as String, // 🚀 새로 추가된 필수 값들
+              startAddress: data['startAddress'] as String,
               endAddress: data['endAddress'] as String,
               category: data['category'] as String,
+              // 🚀 에러의 원인: 새로 추가된 필수 값들을 모두 넣어줘야 합니다!
+              distance: data['distance'] as double,
+              duration: data['duration'] as int,
+              startLat: data['startLat'] as String,
+              startLng: data['startLng'] as String,
+              endLat: data['endLat'] as String,
+              endLng: data['endLng'] as String,
             );
           }
           ),
