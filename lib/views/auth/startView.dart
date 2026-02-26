@@ -1,8 +1,35 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
-class StartView extends StatelessWidget {
+class StartView extends StatefulWidget {
   const StartView({super.key});
+
+  @override
+  State<StartView> createState() => _StartViewState();
+}
+
+class _StartViewState extends State<StartView> {
+  @override
+  void initState() {
+    super.initState();
+    _checkAutoLogin();
+  }
+
+  Future<void> _checkAutoLogin() async {
+    // 저장된 토큰이 있으면 자동 로그인 처리
+    final storage = const FlutterSecureStorage();
+    final token = await storage.read(key: 'access_token');
+    final role = await storage.read(key: 'user_role');
+    if (token != null && role != null && mounted) {
+      final upperRole = role.toUpperCase();
+      if (upperRole.contains('SHIPPER')) {
+        context.go('/shipper-home');
+      } else if (upperRole.contains('CARRIER')) {
+        context.go('/carrier-home');
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

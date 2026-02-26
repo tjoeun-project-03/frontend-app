@@ -1,7 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:jimline/services/common/api_service.dart';
 
 class ProfileState {
   final String userName;
@@ -25,28 +23,19 @@ class ProfileState {
 
 class ProfileViewModel extends StateNotifier<ProfileState> {
   ProfileViewModel() : super(ProfileState()) {
-    fetchProfile(); // 뷰모델 생성 시 자동으로 프로필 로드
+    fetchProfile();
   }
 
-  final _storage = const FlutterSecureStorage();
+  final _api = ApiService();
 
-  // 1. 서버에서 내 프로필 정보 가져오기
   Future<void> fetchProfile() async {
     state = state.copyWith(isLoading: true);
-    final token = await _storage.read(key: 'access_token');
 
     try {
-      final response = await http.get(
-        Uri.parse("http://10.0.2.2:8080/api/users/me"),
-        headers: {
-          "Authorization": "Bearer $token",
-          "Content-Type": "application/json",
-        },
-      );
+      final response = await _api.dio.get("/api/users/me");
 
       if (response.statusCode == 200) {
-        // 한글 깨짐 방지를 위해 utf8.decode 사용
-        final data = jsonDecode(utf8.decode(response.bodyBytes));
+        final data = response.data;
         state = state.copyWith(
           userName: data['userName'],
           email: data['email'],
@@ -61,20 +50,13 @@ class ProfileViewModel extends StateNotifier<ProfileState> {
     }
   }
 
-  // 2. 로그아웃 처리
   Future<bool> logout() async {
-    final token = await _storage.read(key: 'access_token');
     try {
-      // 서버 로그아웃 API 호출
-      await http.post(
-        Uri.parse("http://10.0.2.2:8080/api/auth/logout"),
-        headers: {"Authorization": "Bearer $token"},
-      );
+      await _api.dio.post("/api/auth/logout");
     } catch (e) {
-      print("로그아웃 통신 에러: $e");
+      print("로그아웃 에러: $e");
     } finally {
-      // 서버 성공 여부와 관계없이 로컬 토큰 삭제
-      await _storage.deleteAll();
+      await _api.logout();
     }
     return true;
   }

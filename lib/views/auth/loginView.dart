@@ -14,7 +14,6 @@ class LoginView extends ConsumerStatefulWidget {
 class _LoginViewState extends ConsumerState<LoginView> {
   final TextEditingController _idController = TextEditingController();
   final TextEditingController _pwController = TextEditingController();
-  bool _isKeepLoggedIn = false;
   bool _isObscure = true;
 
   final Color primaryNavy = const Color(0xFF1A237E);
@@ -78,8 +77,6 @@ class _LoginViewState extends ConsumerState<LoginView> {
 
             Row(
               children: [
-                Checkbox(value: _isKeepLoggedIn, onChanged: (val) => setState(() => _isKeepLoggedIn = val!), activeColor: primaryNavy),
-                const Text("로그인 유지"),
                 const Spacer(),
                 TextButton(
                     onPressed: () => context.push('/role-selection'),

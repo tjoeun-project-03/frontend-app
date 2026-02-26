@@ -1,33 +1,50 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:jimline/services/common/api_service.dart';
 
 class OrderViewModel extends StateNotifier<bool> {
   OrderViewModel() : super(false);
 
-  final _storage = const FlutterSecureStorage();
+  final _api = ApiService();
 
-  // 🚀 스프링 서버로 주문 생성 요청
   Future<bool> createOrder(Map<String, dynamic> orderData) async {
-    state = true; // 로딩 시작
-    final token = await _storage.read(key: 'access_token');
+    state = true;
 
     try {
-      final response = await http.post(
-        Uri.parse("http://10.0.2.2:8080/api/orders"),
-        headers: {
-          "Authorization": "Bearer $token",
-          "Content-Type": "application/json",
-        },
-        body: jsonEncode(orderData),
+      final response = await _api.dio.post(
+        "/api/orders/confirm",
+        data: orderData,
       );
 
-      state = false; // 로딩 종료
-      return response.statusCode == 200;
+      state = false;
+
+      // 🚀 로그 확인 (디버깅용)
+      print("Response Status: ${response.statusCode}");
+      print("Response Data: ${response.data}");
+
+      if (response.statusCode == 200) {
+        return true;
+      }
+
+      return false;
     } catch (e) {
+      print("주문 생성 에러: $e");
       state = false;
       return false;
+    }
+  }
+
+  Future<String?> getNewInvoiceNo() async {
+    try {
+      // 서버의 /api/orders/generate-invoice 엔드포인트 호출
+      final response = await _api.dio.get("/api/orders/generate-invoice");
+
+      if (response.statusCode == 200) {
+        return response.data.toString(); // JIM-260226-ABCD 형태의 문자열 반환
+      }
+      return null;
+    } catch (e) {
+      print("인보이스 번호 생성 실패: $e");
+      return null;
     }
   }
 }
