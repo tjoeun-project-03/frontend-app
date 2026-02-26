@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:jimline/viewmodels/shipper/order_vm.dart';
+import 'package:jimline/views/shipper/home/tossPaymentWebView.dart';
+import 'package:webview_flutter/webview_flutter.dart';
+
+import '../../../main.dart';
 
 class ShipperPaymentView extends ConsumerStatefulWidget {
   final double weight;
@@ -159,10 +163,49 @@ class _ShipperPaymentViewState extends ConsumerState<ShipperPaymentView> {
     );
   }
 
-  // 스프링 서버로 데이터 전송 실행
   void _handleOrderSubmit() async {
+    // 1. 수취인 정보 체크
+    if (_nameController.text.isEmpty || _contactController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("수취인 정보를 입력해주세요.")));
+      return;
+    }
+
+    // 2. 🚀 서버에서 중복 없는 "진짜" 인보이스 번호 받아오기
+    final String? confirmedInvoiceNo = await ref.read(orderViewModelProvider.notifier).getNewInvoiceNo();
+
+    if (confirmedInvoiceNo == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("번호 생성 실패. 다시 시도해주세요.")));
+      return;
+    }
+
+    // 3. 서버가 준 번호를 토스에 던지기
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => TossPaymentWebView(
+          orderId: confirmedInvoiceNo, // 👈 서버가 보장한 중복 없는 번호!
+          orderName: "${widget.category} 운송",
+          amount: widget.price,
+        ),
+      ),
+    );
+
+    // 4. 결제 성공 후 최종 저장 요청 (전달받은 번호 그대로 사용)
+    if (result != null && result is Map<String, String?>) {
+      _requestFinalOrderCreation(
+          result['paymentKey']!,
+          result['orderId']!,
+          int.parse(result['amount']!)
+      );
+    }
+  }
+
+// 4. 서버(Spring)에 결제 승인 + DB 저장을 한꺼번에 요청
+  void _requestFinalOrderCreation(String paymentKey, String orderId, int amount) async {
     final success = await ref.read(orderViewModelProvider.notifier).createOrder({
-      "price": widget.price,
+      "paymentKey": paymentKey, // 추가
+      "invoiceNo": orderId,       // 추가
+      "price": amount,         // 추가
       "consigneeName": _nameController.text,
       "consigneeContact": _contactController.text,
       "departure": widget.startAddress,
@@ -184,11 +227,29 @@ class _ShipperPaymentViewState extends ConsumerState<ShipperPaymentView> {
   }
 
   void _showSuccessDialog(BuildContext context) {
-    showDialog(context: context, builder: (context) => AlertDialog(
-      title: const Text("신청 완료"),
-      content: const Text("운송 예약이 정상 신청되었습니다!"),
-      actions: [TextButton(onPressed: () => context.go('/shipper-home'), child: const Text("확인"))],
-    ));
+    // 키보드부터 무조건 닫기
+    FocusManager.instance.primaryFocus?.unfocus();
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text("신청 완료"),
+        content: const Text("운송 예약이 정상 신청되었습니다!"),
+        actions: [
+          TextButton(
+            onPressed: () {
+              // 1. 다이얼로그 닫기
+              Navigator.of(dialogContext).pop();
+              
+              // 2. ShipperPaymentView 닫기 (true 반환 = 후속 작업 요청)
+              Navigator.of(context).pop(true);
+            },
+            child: const Text("확인"),
+          )
+        ],
+      ),
+    );
   }
 
   Widget _buildSummaryRow(String label, String value) => Padding(
