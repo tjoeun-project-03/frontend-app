@@ -174,7 +174,7 @@ class _ShipperPaymentViewState extends ConsumerState<ShipperPaymentView> {
   void _showSuccessDialog(BuildContext context) {
     showDialog(context: context, builder: (context) => AlertDialog(
       title: const Text("신청 완료"),
-      content: const Text("주문이 정상 저장되었습니다!"),
+      content: const Text("주문이 정상 신청되었습니다!"),
       actions: [TextButton(onPressed: () => context.go('/shipper-home'), child: const Text("확인"))],
     ));
   }
