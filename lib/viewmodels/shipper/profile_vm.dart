@@ -7,7 +7,7 @@ class ProfileState {
   final bool isLoading;
 
   ProfileState({
-    this.userName = "불러오는 중...",
+    this.userName = "",
     this.email = "",
     this.isLoading = false,
   });

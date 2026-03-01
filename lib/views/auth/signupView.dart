@@ -120,6 +120,14 @@ class _SignupViewState extends ConsumerState<SignupView> {
 
               ElevatedButton(
                 onPressed: signupState.isFormValid ? () async {
+                  // 🚀 서버 Enum 규격에 맞게 변환하는 맵 생성
+                  final Map<String, String> carTypeMap = {
+                    "1T": "TON_1",
+                    "1.4T": "TON_1_4", // ⚠️ 서버 Enum에 TON_1_4가 없다면 추가해야 함
+                    "2.5T": "TON_2_5",
+                    "3.5T": "TON_3_5",     // ⚠️ 서버 Enum에 TON_3이 없다면 추가해야 함
+                    "5T": "TON_5",
+                  };
                   final Map<String, dynamic> requestData = {
                     "userId": _idController.text, "userPw": _passwordController.text, "userName": _nameController.text,
                     "email": _emailController.text, "phone": _phoneController.text, "zipcode": _postcodeController.text,
@@ -127,7 +135,7 @@ class _SignupViewState extends ConsumerState<SignupView> {
                   };
 
                   if (isDriver) {
-                    requestData.addAll({"car": _carController.text, "carNum": _carNumController.text, "carType": signupState.carType, "freezer": signupState.freezer, "license": "PENDING", "carReg": "PENDING"});
+                    requestData.addAll({"car": _carController.text, "carNum": _carNumController.text, "carType": carTypeMap[signupState.carType] ?? signupState.carType, "freezer": signupState.freezer, "license": "PENDING", "carReg": "PENDING"});
                     _showLicenseGuide(context, requestData);
                   } else {
                     // 가입 요청 및 서버 에러 처리
