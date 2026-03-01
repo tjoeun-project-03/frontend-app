@@ -38,7 +38,7 @@ class RoleSelectionView extends ConsumerWidget {
             const Text("어떤 목적으로 이용하시나요?", style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: primaryNavy)),
             const SizedBox(height: 12),
             const Text("회원 유형에 따라 맞춤 서비스를 제공합니다.", style: TextStyle(color: Colors.black, fontSize: 16)),
-            const SizedBox(height: 40),
+            const SizedBox(height: 20),
 
             // 화주 선택 카드
             _buildRoleCard(
@@ -50,7 +50,7 @@ class RoleSelectionView extends ConsumerWidget {
               imagePath: 'assets/images/boxes.png',
               isSelected: selectedRole == UserRole.shipper,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 10),
 
             // 차주 선택 카드
             _buildRoleCard(
@@ -68,7 +68,7 @@ class RoleSelectionView extends ConsumerWidget {
             // 다음 단계 버튼
             SizedBox(
               width: double.infinity,
-              height: 56,
+              height: 30,
               child: ElevatedButton(
                 onPressed: selectedRole != UserRole.none
                     ? () => context.push('/signup') // 다음 상세 정보 입력 화면으로

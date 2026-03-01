@@ -18,7 +18,7 @@ class ApiService {
   void _initializeDio() {
     dio = Dio(
       BaseOptions(
-        baseUrl: "http://10.0.2.2:8080",
+        baseUrl: "http://192.168.219.106:8080",
         connectTimeout: const Duration(seconds: 10),
         receiveTimeout: const Duration(seconds: 10),
         headers: {
@@ -65,7 +65,7 @@ class ApiService {
       if (refreshToken == null) return false;
 
       final response = await Dio().post(
-        "http://10.0.2.2:8080/api/auth/refresh",
+        "http://192.168.219.106:8080/api/auth/refresh",
         options: Options(headers: {
           'Authorization': 'Bearer $refreshToken',
         }),

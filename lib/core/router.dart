@@ -12,6 +12,8 @@ import '../views/shipper/home/shipperHomeView.dart';
 import '../views/shipper/shipperNavControllerView.dart';
 import '../views/shipper/home/shipperPaymentView.dart';
 import '../views/shipper/tracking/shipperEvaluationView.dart';
+import '../views/carrier/home/carrierHomeView.dart';
+import '../views/carrier/mypage/carrierMyPageView.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -35,8 +37,12 @@ final routerProvider = Provider<GoRouter>((ref) {
           builder: (context, state) => const SignupView(),
       ),
       GoRoute(
-          path: '/license-camera',
-          builder: (context, state) => const LicenseCameraView(),
+        path: '/license-camera',
+        builder: (context, state) {
+          // signupView에서 보낸 데이터를 state.extra로 받아옵니다.
+          final data = state.extra as Map<String, dynamic>;
+          return LicenseCameraView(signupData: data);
+        },
       ),
       GoRoute(
           path: '/shipper-home',
@@ -65,6 +71,13 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/evaluation',
         builder: (context, state) => const ShipperEvaluationView(),
+      ),
+      GoRoute(path: '/carrier-home'
+          , builder: (context, state) => const CarrierHomeView()
+      ),
+      GoRoute(
+        path: '/carrier-mypage',
+        builder: (context, state) => const CarrierMyPageView(),
       ),
     ],
   );
