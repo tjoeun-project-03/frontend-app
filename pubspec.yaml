@@ -48,6 +48,7 @@ dependencies:
   flutter_secure_storage: ^9.0.0
   tosspayments_widget_sdk_flutter: ^2.1.2
   dio: ^5.4.0
+  intl: ^0.20.2
 
 
 dev_dependencies:
