@@ -12,8 +12,9 @@ import '../views/shipper/home/shipperHomeView.dart';
 import '../views/shipper/shipperNavControllerView.dart';
 import '../views/shipper/home/shipperPaymentView.dart';
 import '../views/shipper/tracking/shipperEvaluationView.dart';
-import '../views/carrier/home/carrierHomeView.dart';
+import '../views/carrier/home/orderBoardView.dart';
 import '../views/carrier/mypage/carrierMyPageView.dart';
+import '../views/carrier/home/carrierHomeView.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -65,6 +66,7 @@ final routerProvider = Provider<GoRouter>((ref) {
               startLng: data['startLng'] as String,
               endLat: data['endLat'] as String,
               endLng: data['endLng'] as String,
+              surcharge: data['surcharge'] as int,
             );
           }
           ),
@@ -74,10 +76,6 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(path: '/carrier-home'
           , builder: (context, state) => const CarrierHomeView()
-      ),
-      GoRoute(
-        path: '/carrier-mypage',
-        builder: (context, state) => const CarrierMyPageView(),
       ),
     ],
   );

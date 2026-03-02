@@ -64,15 +64,23 @@ class ApiService {
       String? refreshToken = await _storage.read(key: 'refresh_token');
       if (refreshToken == null) return false;
 
-      final response = await Dio().post(
+      final refreshDio = Dio();
+
+      // 🚀 수정: 서버(Spring)의 @RequestBody String 형식을 맞추기 위해
+      // 데이터를 Map이 아닌 String 그 자체로 전달합니다.
+      final response = await refreshDio.post(
         "http://192.168.219.106:8080/api/auth/refresh",
-        options: Options(headers: {
-          'Authorization': 'Bearer $refreshToken',
-        }),
+        data: refreshToken, // 리프레시 토큰 문자열만 그대로 전송
+        options: Options(
+          headers: {
+            'Content-Type': 'text/plain', // 서버가 String으로 받으므로 타입을 맞춥니다.
+          },
+        ),
       );
 
       if (response.statusCode == 200) {
         final data = response.data;
+        // 서버 응답 필드명이 'accessToken'인지 확인하세요.
         await _storage.write(key: 'access_token', value: data['accessToken']);
         if (data['refreshToken'] != null) {
           await _storage.write(key: 'refresh_token', value: data['refreshToken']);
@@ -81,7 +89,10 @@ class ApiService {
       }
       return false;
     } catch (e) {
-      print("토큰 갱신 실패: $e");
+      // 400 에러 발생 시 로그를 통해 서버의 거절 이유를 확인합니다.
+      if (e is DioException) {
+        print("❌ 토큰 갱신 실패 응답: ${e.response?.data}");
+      }
       return false;
     }
   }
@@ -104,4 +115,3 @@ class ApiService {
     return ApiService().dio;
   }
 }
-

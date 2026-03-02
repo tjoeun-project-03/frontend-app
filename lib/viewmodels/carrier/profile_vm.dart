@@ -1,6 +1,5 @@
-// lib/viewmodels/carrier/profile_vm.dart
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../services/common/api_service.dart';
+import 'package:jimline/services/common/api_service.dart';
 
 class CarrierProfileState {
   final String userName;    // /api/users/me 에서 가져옴
