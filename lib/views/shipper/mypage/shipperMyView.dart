@@ -13,18 +13,15 @@ class ShipperMyView extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
-      // 1. RefreshIndicator로 감싸기
       body: RefreshIndicator(
         color: jimlineNavy,
         onRefresh: () async {
           await ref.read(profileViewModelProvider.notifier).fetchProfile();
         },
         child: SingleChildScrollView(
-          // 2. 중요: AlwaysScrollableScrollPhysics 추가 (당기기 활성화)
           physics: const AlwaysScrollableScrollPhysics(),
           child: Column(
             children: [
-              // 로딩 바 (선택 사항)
               if (profileState.isLoading)
                 const LinearProgressIndicator(minHeight: 2, backgroundColor: Colors.transparent),
 
@@ -91,16 +88,32 @@ class ShipperMyView extends ConsumerWidget {
 
               // 3. 설정 메뉴 리스트
               _buildMenuSection("운송 관리", [
-                _buildMenuItem(Icons.description_outlined, "운송 예약 내역"),
-                _buildMenuItem(Icons.payment_outlined, "결제 수단 관리"),
-                _buildMenuItem(Icons.location_on_outlined, "자주 쓰는 주소"),
+                _buildMenuItem(
+                  Icons.description_outlined, 
+                  "운송 예약 내역", 
+                  onTap: () => context.push('/shipper-reservation-list')
+                ),
+                _buildMenuItem(
+                  Icons.location_on_outlined, 
+                  "자주 쓰는 주소",
+                  // 수정됨: 로컬 저장 방식의 자주 쓰는 주소 페이지로 연결
+                  onTap: () => context.push('/shipper-favorite-address')
+                ),
               ]),
 
               const SizedBox(height: 12),
 
               _buildMenuSection("고객 지원", [
-                _buildMenuItem(Icons.campaign_outlined, "공지사항"),
-                _buildMenuItem(Icons.headset_mic_outlined, "1:1 문의"),
+                _buildMenuItem(
+                  Icons.campaign_outlined, 
+                  "공지사항", 
+                  onTap: () => context.push('/shipper-notice')
+                ),
+                _buildMenuItem(
+                  Icons.headset_mic_outlined, 
+                  "1:1 문의", 
+                  onTap: () => context.push('/shipper-inquiry')
+                ),
                 _buildMenuItem(Icons.help_outline, "자주 묻는 질문"),
               ]),
 
@@ -158,12 +171,12 @@ class ShipperMyView extends ConsumerWidget {
     );
   }
 
-  Widget _buildMenuItem(IconData icon, String label) {
+  Widget _buildMenuItem(IconData icon, String label, {VoidCallback? onTap}) {
     return ListTile(
       leading: Icon(icon, color: const Color(0xFF1A2B88), size: 22),
       title: Text(label, style: const TextStyle(fontSize: 15)),
       trailing: const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey),
-      onTap: () {},
+      onTap: onTap,
     );
   }
 }

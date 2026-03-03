@@ -12,6 +12,11 @@ import '../views/shipper/home/shipperHomeView.dart';
 import '../views/shipper/shipperNavControllerView.dart';
 import '../views/shipper/home/shipperPaymentView.dart';
 import '../views/shipper/tracking/shipperEvaluationView.dart';
+import '../views/shipper/tracking/shipperHistoryTrackingView.dart';
+import '../views/shipper/mypage/shipperNoticeView.dart';
+import '../views/shipper/mypage/shipperInquiryView.dart';
+import '../views/shipper/mypage/shipperReservationView.dart';
+import '../views/shipper/mypage/shipperFavoriteAddressView.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -52,7 +57,6 @@ final routerProvider = Provider<GoRouter>((ref) {
               startAddress: data['startAddress'] as String,
               endAddress: data['endAddress'] as String,
               category: data['category'] as String,
-              // 🚀 에러의 원인: 새로 추가된 필수 값들을 모두 넣어줘야 합니다!
               distance: data['distance'] as double,
               duration: data['duration'] as int,
               startLat: data['startLat'] as String,
@@ -65,6 +69,26 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/evaluation',
         builder: (context, state) => const ShipperEvaluationView(),
+      ),
+      GoRoute(
+        path: '/shipper-history',
+        builder: (context, state) => const ShipperHistoryTrackingView(),
+      ),
+      GoRoute(
+        path: '/shipper-notice',
+        builder: (context, state) => const ShipperNoticeView(),
+      ),
+      GoRoute(
+        path: '/shipper-inquiry',
+        builder: (context, state) => const ShipperInquiryView(),
+      ),
+      GoRoute(
+        path: '/shipper-reservation-list',
+        builder: (context, state) => const ShipperReservationView(),
+      ),
+      GoRoute(
+        path: '/shipper-favorite-address',
+        builder: (context, state) => const ShipperFavoriteAddressView(),
       ),
     ],
   );
