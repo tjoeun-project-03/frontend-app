@@ -65,10 +65,8 @@ class ApiService {
       if (refreshToken == null) return false;
 
       final response = await Dio().post(
-        "http://10.0.2.2:8080/api/auth/refresh",
-        options: Options(headers: {
-          'Authorization': 'Bearer $refreshToken',
-        }),
+        "/api/auth/refresh",
+        data: {'refreshToken' : refreshToken},
       );
 
       if (response.statusCode == 200) {

@@ -69,11 +69,11 @@ class ShipperMyView extends ConsumerWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    _buildSummaryItem("예약 중", "2"),
+                    _buildSummaryItem("예약 중", "${profileState.summary?.createdCount ?? 0}"),
                     _buildDivider(),
-                    _buildSummaryItem("운송 중", "1"),
+                    _buildSummaryItem("운송 중", "${profileState.summary?.acceptedCount ?? 0}"),
                     _buildDivider(),
-                    _buildSummaryItem("완료", "15"),
+                    _buildSummaryItem("완료", "${profileState.summary?.completedCount ?? 0}"),
                   ],
                 ),
               ),
