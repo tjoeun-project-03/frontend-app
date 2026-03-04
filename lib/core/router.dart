@@ -18,6 +18,7 @@ import '../views/shipper/mypage/shipperInquiryView.dart';
 import '../views/shipper/mypage/shipperReservationView.dart';
 import '../views/shipper/mypage/shipperFavoriteAddressView.dart';
 import '../views/shipper/mypage/shipperFaqView.dart';
+import '../views/carrier/home/carrierHomeView.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -51,6 +52,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
           path: '/shipper-home',
           builder: (context, state) => const ShipperNavController(),
+      ),
+      GoRoute(
+          path: '/carrier-home',
+          builder: (context, state) => const CarrierHomeView(),
       ),
       GoRoute(
           path: '/shipper-payment',
