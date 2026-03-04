@@ -68,7 +68,7 @@ class _TossPaymentWebViewState extends State<TossPaymentWebView> {
       <body>
         <script>
           var tossPayments = TossPayments("${TossPaymentConfig.clientKey}");
-          tossPayments.requestPayment('가상계좌', {
+          tossPayments.requestPayment('카드결제', {
             amount: ${widget.amount},
             orderId: '${widget.orderId}',
             orderName: '${widget.orderName}',

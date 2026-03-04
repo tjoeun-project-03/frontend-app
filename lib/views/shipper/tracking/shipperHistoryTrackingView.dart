@@ -1,256 +1,314 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 import '../../../viewmodels/shipper/tracking_vm.dart';
 import '../../../models/shipper/tracking_model.dart';
 
-class ShipperHistoryTrackingView extends ConsumerWidget {
-  const ShipperHistoryTrackingView({super.key});
+class ShipperHistoryTrackingView extends ConsumerStatefulWidget {
+  final int orderId;
+  const ShipperHistoryTrackingView({super.key, required this.orderId});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    // ViewModel 상태 감시
-    final state = ref.watch(trackingProvider);
-    final viewModel = ref.read(trackingProvider.notifier);
+  ConsumerState<ShipperHistoryTrackingView> createState() => _ShipperHistoryTrackingViewState();
+}
 
-    // 1. 철저한 가드 로직: 데이터가 없거나 로딩 중이면 다른 위젯을 아예 생성하지 않음
+class _ShipperHistoryTrackingViewState extends ConsumerState<ShipperHistoryTrackingView> {
+  late final WebViewController _mapController;
+
+  // 상수 컬러 정의
+  static const Color jimlineNavy = Color(0xFF1A2B88);
+  static const Color borderGrey = Color(0xFFEEEEEE);
+  static const Color bgGrey = Color(0xFFF5F5F5);
+  static const Color textGrey = Color(0xFF9E9E9E);
+
+  @override
+  void initState() {
+    super.initState();
+    _initMapController();
+    // 화면 진입 시 서버 데이터 호출
+    Future.microtask(() {
+      ref.read(trackingProvider.notifier).fetchOrderTimeline(widget.orderId);
+    });
+  }
+
+  void _initMapController() {
+    _mapController = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setBackgroundColor(const Color(0xFFF5F5F5))
+      ..setNavigationDelegate(
+        NavigationDelegate(
+          onPageFinished: (String url) {
+            // 페이지 로딩 후 기사 위치로 마커 이동 및 중심 설정 함수 호출 가능
+            _updateMarker(37.5665, 126.9780); // 예시 좌표 (서울시청)
+          },
+        ),
+      )
+    // 서버 페이지 대신 로컬 HTML 코드를 바로 로드합니다.
+      ..loadHtmlString(_buildTmapHtml(37.5665, 126.9780));
+  }
+
+  // Tmap JS SDK를 구동하는 HTML 소스 생성
+  String _buildTmapHtml(double lat, double lng) {
+    return '''
+  <!DOCTYPE html>
+  <html>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://apis.openapi.sk.com/tmap/jsv2?version=1&appKey=zevdfBBPeu3eQZItbMK1k812led3px8x2dr5r9sZ"></script>
+    <style>
+      body, html, #map_div { margin: 0; padding: 0; width: 100%; height: 100%; background-color: #F5F5F5; }
+    </style>
+  </head>
+  <body>
+    <div id="map_div"></div>
+    <script>
+      var map;
+      var marker;
+
+      // 2. 안전한 초기화 함수
+      function checkAndInit() {
+        if (typeof Tmapv2 !== 'undefined') {
+          console.log("Tmapv2 로드 완료");
+          initMap();
+        } else {
+          console.log("Tmapv2 로딩 중...");
+          setTimeout(checkAndInit, 100); // 0.1초 뒤 다시 시도
+        }
+      }
+
+      function initMap() {
+        map = new Tmapv2.Map("map_div", {
+          center: new Tmapv2.LatLng($lat, $lng),
+          width: "100%",
+          height: "100%",
+          zoom: 16
+        });
+        
+        marker = new Tmapv2.Marker({
+          position: new Tmapv2.LatLng($lat, $lng),
+          map: map
+        });
+      }
+
+      window.onload = checkAndInit;
+    </script>
+  </body>
+  </html>
+  ''';
+  }
+
+  // Flutter에서 기사 위치가 바뀔 때 호출하는 함수
+  void _updateMarker(double lat, double lng) {
+    _mapController.runJavaScript('updatePosition($lat, $lng);');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final state = ref.watch(trackingProvider);
+
     if (state.isLoading || state.data == null) {
       return const Scaffold(
         backgroundColor: Colors.white,
-        body: Center(child: CircularProgressIndicator(color: Color(0xFF1A2B88))),
+        body: Center(child: CircularProgressIndicator(color: jimlineNavy)),
       );
     }
 
     final data = state.data!;
 
-    // 상수 컬러 정의 (런타임 Null 에러 방지)
-    const Color jimlineNavy = Color(0xFF1A2B88);
-    const Color jimlineNavyLight = Color(0xFFD1D5E7);
-    const Color borderGrey = Color(0xFFEEEEEE);
-    const Color bgGrey = Color(0xFFF5F5F5);
-    const Color textGrey = Color(0xFF9E9E9E);
-
     return Scaffold(
       backgroundColor: Colors.white,
-      // 2. SingleChildScrollView 사용: ListView보다 레이아웃 계산 오류(hasSize)에 훨씬 강함
-      body: SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 20, 16, 40),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // --- 상태 요약 박스 ---
-            SizedBox(
-              height: 80,
-              child: Row(
-                children: [
-                  _buildSummaryBox("대기", data.summary["waiting"] ?? "0", jimlineNavy, jimlineNavyLight),
-                  const SizedBox(width: 8),
-                  _buildSummaryBox("배송중", data.summary["ing"] ?? "0", jimlineNavy, jimlineNavyLight),
-                  const SizedBox(width: 8),
-                  _buildSummaryBox("완료", data.summary["done"] ?? "0", jimlineNavy, jimlineNavyLight),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            // --- 탭 메뉴 ---
-            Container(
-              height: 48,
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(color: jimlineNavy, borderRadius: BorderRadius.circular(8)),
-              child: Row(
-                children: [
-                  _buildTabItem("전체", state.selectedTabIndex == 0, () => viewModel.changeTab(0)),
-                  _buildTabItem("배송중", state.selectedTabIndex == 1, () => viewModel.changeTab(1)),
-                  _buildTabItem("완료", state.selectedTabIndex == 2, () => viewModel.changeTab(2)),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            // --- 탭별 콘텐츠 (전체(0) 또는 배송중(1)일 때) ---
-            if (state.selectedTabIndex == 0 || state.selectedTabIndex == 1) ...[
-              _buildMainCard(data, jimlineNavy, borderGrey, bgGrey, textGrey),
-              const SizedBox(height: 24),
-              _buildTimelineSection(data.timelines, jimlineNavy, borderGrey, textGrey),
-            ] else ...[
-              // 완료(2) 탭일 때
-              Center(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 60),
-                  child: Text("완료된 운송 내역이 없습니다.", style: TextStyle(color: textGrey, fontSize: 14)),
-                ),
-              )
-            ],
-          ],
+      appBar: AppBar(
+        title: const Text("배송 상세 추적",
+            style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 16)),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.black, size: 20),
+          onPressed: () => Navigator.pop(context),
         ),
       ),
-    );
-  }
-
-  // --- UI Helper Functions ---
-
-  Widget _buildSummaryBox(String title, String count, Color color, Color borderColor) {
-    return Expanded(
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: borderColor),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(title, style: const TextStyle(color: Color(0xFF9E9E9E), fontSize: 13)),
-            Text(count, style: TextStyle(color: color, fontSize: 18, fontWeight: FontWeight.bold)),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTabItem(String label, bool isSelected, VoidCallback onTap) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        behavior: HitTestBehavior.opaque,
-        child: Container(
-          decoration: BoxDecoration(
-            color: isSelected ? Colors.white : Colors.transparent,
-            borderRadius: BorderRadius.circular(6),
-          ),
-          alignment: Alignment.center,
-          child: Text(
-            label,
-            style: TextStyle(
-              color: isSelected ? const Color(0xFF1A2B88) : Colors.white,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMainCard(TrackingModel data, Color color, Color bGrey, Color bgGrey, Color tGrey) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: bGrey),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      body: Column(
         children: [
-          Container(
-            height: 180,
+          // 1. 상단 지도 영역 (화면의 약 35~40% 고정)
+          SizedBox(
+            height: MediaQuery.of(context).size.height * 0.35,
             width: double.infinity,
-            decoration: BoxDecoration(
-              color: bgGrey,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-            ),
-            child: const Icon(Icons.map_outlined, color: Color(0xFF9E9E9E), size: 40),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Stack(
               children: [
-                const Text("배송중", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                const SizedBox(height: 4),
-                Text(data.route ?? "", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: color)),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    const CircleAvatar(
-                      backgroundColor: Color(0xFFEEEEEE),
-                      child: Icon(Icons.person, color: Color(0xFF9E9E9E)),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(data.driverName ?? "기사 정보 없음", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                          Text(data.carInfo ?? "", style: TextStyle(fontSize: 11, color: tGrey)),
-                        ],
-                      ),
-                    ),
-                    // 해결: ElevatedButton의 무한 너비 에러(infinite width)를 방지하기 위해 SizedBox로 크기 제한
-                    SizedBox(
-                      height: 32,
-                      width: 80,
-                      child: ElevatedButton(
-                        onPressed: () {},
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: color,
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          padding: EdgeInsets.zero,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-                        ),
-                        child: const Text("위치 보기", style: TextStyle(fontSize: 12)),
-                      ),
-                    ),
-                  ],
-                ),
+                WebViewWidget(controller: _mapController),
               ],
             ),
           ),
+
+          // 2. 하단 상세 정보 및 타임라인 (나머지 영역 스크롤)
+          Expanded(
+            child: Container(
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                boxShadow: [
+                  BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, -5))
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(20, 24, 20, 40),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // 기사 및 차량 정보 섹션
+                      _buildDriverSection(data),
+
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 24),
+                        child: Divider(height: 1, thickness: 1, color: borderGrey),
+                      ),
+
+                      // 운송 현황 타임라인 섹션
+                      _buildTimelineSection(data.timelines),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildTimelineSection(List<TimelineItemData> timelines, Color color, Color lineColor, Color tGrey) {
+  // --- UI 컴포넌트 분리 ---
+
+  Widget _buildStatusBadge(String status) {
     return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(color: const Color(0xFFF8F9FD), borderRadius: BorderRadius.circular(12)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text("운송현황", style: TextStyle(fontWeight: FontWeight.bold, color: color, fontSize: 14)),
-          const SizedBox(height: 20),
-          // 루프를 돌려 타임라인 생성
-          for (int i = 0; i < timelines.length; i++)
-            _buildTimelineItem(
-              timelines[i].title ?? "",
-              timelines[i].time ?? "",
-              timelines[i].isDone,
-              color,
-              lineColor,
-              tGrey,
-              isLast: i == timelines.length - 1,
-              isCurrent: timelines[i].isCurrent,
-            ),
-        ],
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: jimlineNavy,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 4)],
+      ),
+      child: Text(
+        status,
+        style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
       ),
     );
   }
 
-  Widget _buildTimelineItem(String title, String time, bool isDone, Color color, Color lineColor, Color tGrey, {bool isLast = false, bool isCurrent = false}) {
+  Widget _buildDriverSection(TrackingModel data) {
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 해결: IntrinsicHeight 에러(Missing size)를 피하기 위해 고정 높이 Column 사용
-        Column(
-          children: [
-            Icon(
-              isCurrent ? Icons.local_shipping : (isDone ? Icons.check_circle : Icons.radio_button_unchecked),
-              size: 20,
-              color: isDone ? color : tGrey,
-            ),
-            if (!isLast) Container(width: 2, height: 40, color: lineColor),
-          ],
+        const CircleAvatar(
+          radius: 26,
+          backgroundColor: Color(0xFFF0F2FF),
+          child: Icon(Icons.person, color: jimlineNavy, size: 30),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: 16),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: TextStyle(fontWeight: FontWeight.bold, color: isDone ? Colors.black : tGrey, fontSize: 14)),
+              Text(
+                data.driverName ?? "기사 배정 중",
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
+              ),
               const SizedBox(height: 4),
-              Text(time, style: TextStyle(fontSize: 12, color: tGrey)),
-              const SizedBox(height: 20),
+              Text(
+                "${data.carInfo ?? '차량정보 없음'}",
+                style: const TextStyle(fontSize: 13, color: textGrey),
+              ),
+            ],
+          ),
+        ),
+        // 전화 버튼
+        Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFFF0F2FF),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: IconButton(
+            onPressed: () {}, // TODO: 전화 걸기 연동
+            icon: const Icon(Icons.phone_enabled, color: jimlineNavy),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTimelineSection(List<TimelineItemData> timelines) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          "운송 타임라인",
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.black87),
+        ),
+        const SizedBox(height: 24),
+        if (timelines.isEmpty)
+          const Center(child: Text("기록된 타임라인이 없습니다."))
+        else
+          for (int i = 0; i < timelines.length; i++)
+            _buildTimelineItem(
+              timelines[i],
+              isLast: i == timelines.length - 1,
+            ),
+      ],
+    );
+  }
+
+  Widget _buildTimelineItem(TimelineItemData item, {required bool isLast}) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // 타임라인 선과 아이콘
+        Column(
+          children: [
+            Container(
+              width: 24,
+              height: 24,
+              decoration: BoxDecoration(
+                color: item.isDone ? jimlineNavy : Colors.white,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: item.isDone ? jimlineNavy : borderGrey,
+                  width: 2,
+                ),
+              ),
+              child: item.isDone
+                  ? const Icon(Icons.check, size: 14, color: Colors.white)
+                  : null,
+            ),
+            if (!isLast)
+              Container(
+                width: 2,
+                height: 40,
+                color: item.isDone ? jimlineNavy : borderGrey,
+              ),
+          ],
+        ),
+        const SizedBox(width: 16),
+        // 텍스트 내용
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                item.title ?? "",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                  color: item.isDone ? Colors.black : textGrey,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                item.time ?? "",
+                style: const TextStyle(fontSize: 12, color: textGrey),
+              ),
+              const SizedBox(height: 20), // 항목 간 간격
             ],
           ),
         ),
