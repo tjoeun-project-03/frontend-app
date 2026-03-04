@@ -31,7 +31,6 @@ class ApiService {
     dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
-          // 1. 모든 요청에 토큰 추가
           String? token = await _storage.read(key: 'access_token');
           if (token != null) {
             options.headers['Authorization'] = 'Bearer $token';
@@ -39,16 +38,21 @@ class ApiService {
           return handler.next(options);
         },
         onError: (error, handler) async {
-          // 2. 401 Unauthorized 시 토큰 갱신 시도
+          // ⚠️ 401 에러 발생 시 로그
           if (error.response?.statusCode == 401) {
+            print("🚨 [401 Unauthorized] 토큰 만료 감지. 갱신을 시도합니다...");
+
             final bool refreshed = await _refreshToken();
+
             if (refreshed) {
-              // 토큰 갱신 성공 후 원래 요청 재시도
+              print("✅ [Auth] 토큰 갱신 성공! 원래 요청을 재시도합니다: ${error.requestOptions.path}");
               String? newToken = await _storage.read(key: 'access_token');
               error.requestOptions.headers['Authorization'] = 'Bearer $newToken';
+
+              // 재시도 시에도 dio 인스턴스를 사용하여 인터셉터가 적용되도록 함
               return handler.resolve(await dio.fetch(error.requestOptions));
             } else {
-              // 토큰 갱신 실패 → 로그아웃 처리
+              print("❌ [Auth] 토큰 갱신 실패. 로그아웃 처리합니다.");
               await logout();
             }
           }
@@ -62,20 +66,22 @@ class ApiService {
   Future<bool> _refreshToken() async {
     try {
       String? refreshToken = await _storage.read(key: 'refresh_token');
-      if (refreshToken == null) return false;
+      print("🔍 [Refresh] 저장된 리프레시 토큰 읽기 완료");
 
-      final refreshDio = Dio();
+      if (refreshToken == null) {
+        print("⚠️ [Refresh] 저장된 리프레시 토큰이 없습니다.");
+        return false;
+      }
 
-      // 🚀 수정: 서버(Spring)의 @RequestBody String 형식을 맞추기 위해
-      // 데이터를 Map이 아닌 String 그 자체로 전달합니다.
+      final refreshDio = Dio(BaseOptions(
+        baseUrl: "http://10.0.2.2:8080",
+        contentType: Headers.textPlainContentType, // 서버 @RequestBody String에 맞춤
+      ));
+
+      print("📡 [Refresh] 서버에 재발급 요청 중...");
       final response = await refreshDio.post(
-        "http://192.168.219.106:8080/api/auth/refresh",
-        data: refreshToken, // 리프레시 토큰 문자열만 그대로 전송
-        options: Options(
-          headers: {
-            'Content-Type': 'text/plain', // 서버가 String으로 받으므로 타입을 맞춥니다.
-          },
-        ),
+        "/api/auth/refresh",
+        data: refreshToken,
       );
 
       if (response.statusCode == 200) {
@@ -84,9 +90,14 @@ class ApiService {
         await _storage.write(key: 'access_token', value: data['accessToken']);
         if (data['refreshToken'] != null) {
           await _storage.write(key: 'refresh_token', value: data['refreshToken']);
+          print("💾 [Refresh] 새로운 리프레시 토큰 저장 완료");
         }
+
+        print("✨ [Refresh] 엑세스 토큰 갱신 완료!");
         return true;
       }
+
+      print("❓ [Refresh] 서버 응답이 200이 아님: ${response.statusCode}");
       return false;
     } catch (e) {
       // 400 에러 발생 시 로그를 통해 서버의 거절 이유를 확인합니다.
