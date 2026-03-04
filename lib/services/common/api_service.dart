@@ -18,7 +18,7 @@ class ApiService {
   void _initializeDio() {
     dio = Dio(
       BaseOptions(
-        baseUrl: "http://10.0.2.2:8080",
+        baseUrl: "http://192.168.219.106:8080",
         connectTimeout: const Duration(seconds: 10),
         receiveTimeout: const Duration(seconds: 10),
         headers: {
@@ -86,8 +86,7 @@ class ApiService {
 
       if (response.statusCode == 200) {
         final data = response.data;
-        print("📥 [Refresh] 서버 응답 수신: $data");
-
+        // 서버 응답 필드명이 'accessToken'인지 확인하세요.
         await _storage.write(key: 'access_token', value: data['accessToken']);
         if (data['refreshToken'] != null) {
           await _storage.write(key: 'refresh_token', value: data['refreshToken']);
@@ -101,7 +100,10 @@ class ApiService {
       print("❓ [Refresh] 서버 응답이 200이 아님: ${response.statusCode}");
       return false;
     } catch (e) {
-      print("🔥 [Refresh] 예외 발생: $e");
+      // 400 에러 발생 시 로그를 통해 서버의 거절 이유를 확인합니다.
+      if (e is DioException) {
+        print("❌ 토큰 갱신 실패 응답: ${e.response?.data}");
+      }
       return false;
     }
   }
@@ -124,4 +126,3 @@ class ApiService {
     return ApiService().dio;
   }
 }
-

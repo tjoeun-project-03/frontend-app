@@ -41,8 +41,12 @@ final routerProvider = Provider<GoRouter>((ref) {
           builder: (context, state) => const SignupView(),
       ),
       GoRoute(
-          path: '/license-camera',
-          builder: (context, state) => const LicenseCameraView(),
+        path: '/license-camera',
+        builder: (context, state) {
+          // signupView에서 보낸 데이터를 state.extra로 받아옵니다.
+          final data = state.extra as Map<String, dynamic>;
+          return LicenseCameraView(signupData: data);
+        },
       ),
       GoRoute(
           path: '/shipper-home',
@@ -64,6 +68,7 @@ final routerProvider = Provider<GoRouter>((ref) {
               startLng: data['startLng'] as String,
               endLat: data['endLat'] as String,
               endLng: data['endLng'] as String,
+              surcharge: data['surcharge'] as int,
             );
           }
           ),
