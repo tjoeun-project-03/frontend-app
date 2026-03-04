@@ -72,7 +72,7 @@ class _ShipperHomeViewState extends State<ShipperHomeView> {
     try {
       // 파이썬 서버의 endpoint와 데이터 구조에 맞춤
       final response = await Dio().post(
-        "http://192.168.219.106:8000/api/v1/orders/estimate",
+        "http://10.0.2.2:8000/api/v1/orders/estimate",
         data: {
           "start_lat": startLat,
           "start_lng": startLng,
