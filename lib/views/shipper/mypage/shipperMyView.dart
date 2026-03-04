@@ -114,7 +114,11 @@ class ShipperMyView extends ConsumerWidget {
                   "1:1 문의", 
                   onTap: () => context.push('/shipper-inquiry')
                 ),
-                _buildMenuItem(Icons.help_outline, "자주 묻는 질문"),
+                _buildMenuItem(
+                  Icons.help_outline, 
+                  "자주 묻는 질문",
+                  onTap: () => context.push('/shipper-faq'),
+                ),
               ]),
 
               const SizedBox(height: 40),

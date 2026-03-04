@@ -10,9 +10,6 @@ class NoticeService {
     try {
       final response = await _dio.get('/api/notices'); 
       if (response.statusCode == 200) {
-        // 🚀 서버에서 받은 원본 데이터를 콘솔에 출력
-        print("📥 [NoticeService] getNotices Response: ${response.data}");
-        
         List<dynamic> data = response.data;
         return data.map((json) => NoticeModel.fromJson(json)).toList();
       }
