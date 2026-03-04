@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:jimline/views/shipper/tracking/shipper_order_list_view.dart';
 import '../shipper/home/shipperHomeView.dart';
 import '../shipper/mypage/shipperMyView.dart';
 import '../shipper/tracking/shipperHistoryTrackingView.dart';
@@ -20,7 +21,7 @@ class _ShipperNavControllerState extends State<ShipperNavController> {
   Widget _getSelectedPage(int index) {
     switch (index) {
       case 0: return const ShipperHomeView();
-      case 1: return const ShipperHistoryTrackingView();
+      case 1: return const ShipperOrderListView();
       case 2: return const ShipperMyView();
       default: return const ShipperHomeView();
     }
