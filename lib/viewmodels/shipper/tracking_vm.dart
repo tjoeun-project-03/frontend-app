@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 import 'package:intl/intl.dart';
@@ -33,16 +32,27 @@ class TrackingViewModel extends StateNotifier<TrackingState> {
     state = state.copyWith(isLoading: true);
 
     try {
-      // 주문 상세 정보와 타임라인을 병렬로 호출
       final results = await Future.wait([
-        _dio.get('/api/orders/id/$orderId'),          // 주문 상세
-        _dio.get('/api/orders/$orderId/timeline')  // 타임라인 로그
+        _dio.get('/api/orders/id/$orderId'),
+        _dio.get('/api/orders/$orderId/timeline')
       ]);
 
-      final orderData = results[0].data;
+      var orderData = results[0].data;
+      
+      // 서버 응답이 리스트인 경우 처리
+      if (orderData is List) {
+        if (orderData.isNotEmpty) {
+          orderData = orderData.firstWhere(
+            (item) => item['orderId'] == orderId,
+            orElse: () => orderData[0],
+          );
+        } else {
+          throw Exception("Order not found");
+        }
+      }
+
       final List<dynamic> rawLogs = results[1].data;
 
-      // 타임라인 변환
       final List<TimelineItemData> uiTimelines = rawLogs.asMap().entries.map((entry) {
         int idx = entry.key;
         var log = entry.value;
@@ -51,21 +61,28 @@ class TrackingViewModel extends StateNotifier<TrackingState> {
           title: log['statusDescription'] ?? log['statusName'] ?? '상태 정보 없음',
           time: _formatDate(log['updateTime']),
           isDone: true,
-          isCurrent: idx == 0, // 첫 번째 요소가 가장 최근 상태
+          isCurrent: idx == 0,
         );
       }).toList();
 
-      // UI 객체 조립
       final updatedData = TrackingModel(
         status: orderData['status'] ?? "운행중",
         route: "${orderData['departure'] ?? '출발지'} → ${orderData['arrival'] ?? '도착지'}",
         driverName: orderData['carrierName'] ?? "기사 배정 중",
         carInfo: "${orderData['carType'] ?? ''}",
         carrierContact: orderData['consigneeContact'] ?? "연락처 없음",
+        startLat: double.tryParse(orderData['startLat']?.toString() ?? ''),
+        startLng: double.tryParse(orderData['startLng']?.toString() ?? ''),
+        endLat: double.tryParse(orderData['endLat']?.toString() ?? ''),
+        endLng: double.tryParse(orderData['endLng']?.toString() ?? ''),
+        lat: double.tryParse(orderData['startLat']?.toString() ?? '') ?? 37.5665,
+        lng: double.tryParse(orderData['startLng']?.toString() ?? '') ?? 126.9780,
         timelines: uiTimelines,
       );
 
       state = state.copyWith(data: updatedData, isLoading: false);
+      
+      connectToTrackingSocket(orderId);
     } catch (e) {
       print("데이터 로드 에러: $e");
       state = state.copyWith(isLoading: false);
@@ -81,26 +98,43 @@ class TrackingViewModel extends StateNotifier<TrackingState> {
       return dateStr;
     }
   }
-  void connectToTrackingSocket(int orderId) {
-    // 서버 주소에 맞게 수정 (예: ws://10.0.2.2:8000/api/v1/tracking/ws/$orderId)
-    final wsUrl = Uri.parse('ws://10.0.2.2:8000/api/v1/tracking/ws/$orderId');
-    _channel = WebSocketChannel.connect(wsUrl);
 
-    _channel!.stream.listen((message) {
-      final data = jsonDecode(message);
-      if (data['lat'] != null && data['lng'] != null) {
-        // 새로운 좌표로 상태 업데이트
-        final updatedModel = state.data?.copyWith(
-          lat: double.parse(data['lat'].toString()),
-          lng: double.parse(data['lng'].toString()),
-        );
-        state = state.copyWith(data: updatedModel);
-      }
-    }, onError: (error) {
-      print("소켓 에러: $error");
-    }, onDone: () {
-      print("소켓 연결 종료");
-    });
+  void connectToTrackingSocket(int orderId) {
+    _channel?.sink.close();
+    
+    final baseUrl = _dio.options.baseUrl;
+    final uri = Uri.parse(baseUrl);
+    final host = uri.host;
+    
+    // 포트가 명시되어 있지 않으면 기본값 사용, 있으면 해당 호스트 유지
+    // 에뮬레이터 10.0.2.2 대응
+    final wsUrl = Uri.parse('ws://$host:8000/api/v1/tracking/ws/$orderId');
+    print("웹소켓 연결 시도: $wsUrl");
+
+    try {
+      _channel = WebSocketChannel.connect(wsUrl);
+
+      _channel!.stream.listen((message) {
+        print("소켓 메시지 수신: $message");
+        final data = jsonDecode(message);
+        if (data['lat'] != null && data['lng'] != null) {
+          final currentData = state.data;
+          if (currentData != null) {
+            final updatedModel = currentData.copyWith(
+              lat: double.parse(data['lat'].toString()),
+              lng: double.parse(data['lng'].toString()),
+            );
+            state = state.copyWith(data: updatedModel);
+          }
+        }
+      }, onError: (error) {
+        print("소켓 에러 상세: $error");
+      }, onDone: () {
+        print("소켓 연결 종료");
+      }, cancelOnError: false);
+    } catch (e) {
+      print("소켓 연결 예외 발생: $e");
+    }
   }
 
   @override
@@ -109,7 +143,6 @@ class TrackingViewModel extends StateNotifier<TrackingState> {
     super.dispose();
   }
 
-  // 이 메서드가 클래스 중괄호 { } 안에 정확히 들어와야 합니다.
   void changeTab(int index) {
     state = state.copyWith(selectedTabIndex: index);
   }

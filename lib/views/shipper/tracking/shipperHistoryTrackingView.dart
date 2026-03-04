@@ -14,18 +14,16 @@ class ShipperHistoryTrackingView extends ConsumerStatefulWidget {
 
 class _ShipperHistoryTrackingViewState extends ConsumerState<ShipperHistoryTrackingView> {
   late final WebViewController _mapController;
+  bool _isFirstLoad = true;
 
-  // 상수 컬러 정의
   static const Color jimlineNavy = Color(0xFF1A2B88);
   static const Color borderGrey = Color(0xFFEEEEEE);
-  static const Color bgGrey = Color(0xFFF5F5F5);
   static const Color textGrey = Color(0xFF9E9E9E);
 
   @override
   void initState() {
     super.initState();
     _initMapController();
-    // 화면 진입 시 서버 데이터 호출
     Future.microtask(() {
       ref.read(trackingProvider.notifier).fetchOrderTimeline(widget.orderId);
     });
@@ -38,23 +36,38 @@ class _ShipperHistoryTrackingViewState extends ConsumerState<ShipperHistoryTrack
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageFinished: (String url) {
-            // 페이지 로딩 후 기사 위치로 마커 이동 및 중심 설정 함수 호출 가능
-            _updateMarker(37.5665, 126.9780); // 예시 좌표 (서울시청)
+            debugPrint("Tmap 페이지 로드 완료");
+          },
+          onWebResourceError: (WebResourceError error) {
+            debugPrint("WebView 에러: ${error.description}");
           },
         ),
-      )
-    // 서버 페이지 대신 로컬 HTML 코드를 바로 로드합니다.
-      ..loadHtmlString(_buildTmapHtml(37.5665, 126.9780));
+      );
   }
 
-  // Tmap JS SDK를 구동하는 HTML 소스 생성
-  String _buildTmapHtml(double lat, double lng) {
+  // 지도를 처음 그리거나 전체 갱신할 때 사용
+  void _loadMapHtml(TrackingModel data) {
+    debugPrint("지도 HTML 로드 시작");
+    _mapController.loadHtmlString(_buildTmapHtml(data));
+    setState(() {
+      _isFirstLoad = false;
+    });
+  }
+
+  String _buildTmapHtml(TrackingModel data) {
+    final startLat = data.startLat ?? 37.5665;
+    final startLng = data.startLng ?? 126.9780;
+    final endLat = data.endLat ?? 37.5665;
+    final endLng = data.endLng ?? 126.9780;
+    final driverLat = data.lat;
+    final driverLng = data.lng;
+
     return '''
   <!DOCTYPE html>
   <html>
   <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <script src="https://apis.openapi.sk.com/tmap/jsv2?version=1&appKey=zevdfBBPeu3eQZItbMK1k812led3px8x2dr5r9sZ"></script>
     <style>
       body, html, #map_div { margin: 0; padding: 0; width: 100%; height: 100%; background-color: #F5F5F5; }
@@ -64,48 +77,97 @@ class _ShipperHistoryTrackingViewState extends ConsumerState<ShipperHistoryTrack
     <div id="map_div"></div>
     <script>
       var map;
-      var marker;
+      var driverMarker;
+      var startMarker;
+      var endMarker;
 
-      // 2. 안전한 초기화 함수
-      function checkAndInit() {
-        if (typeof Tmapv2 !== 'undefined') {
-          console.log("Tmapv2 로드 완료");
-          initMap();
-        } else {
-          console.log("Tmapv2 로딩 중...");
-          setTimeout(checkAndInit, 100); // 0.1초 뒤 다시 시도
+      function initMap() {
+        try {
+          map = new Tmapv2.Map("map_div", {
+            center: new Tmapv2.LatLng($driverLat, $driverLng),
+            width: "100%",
+            height: "100%",
+            zoom: 14
+          });
+          
+          startMarker = new Tmapv2.Marker({
+            position: new Tmapv2.LatLng($startLat, $startLng),
+            icon: "http://tmapapi.sktelecom.com/upload/tmap/marker/pin_b_m_s.png",
+            map: map,
+            title: "출발지"
+          });
+
+          endMarker = new Tmapv2.Marker({
+            position: new Tmapv2.LatLng($endLat, $endLng),
+            icon: "http://tmapapi.sktelecom.com/upload/tmap/marker/pin_r_m_e.png",
+            map: map,
+            title: "도착지"
+          });
+
+          driverMarker = new Tmapv2.Marker({
+            position: new Tmapv2.LatLng($driverLat, $driverLng),
+            icon: "https://cdn-icons-png.flaticon.com/512/3063/3063822.png",
+            iconSize: new Tmapv2.Size(34, 34),
+            map: map,
+            title: "기사 위치"
+          });
+
+          var bounds = new Tmapv2.LatLngBounds();
+          bounds.extend(new Tmapv2.LatLng($startLat, $startLng));
+          bounds.extend(new Tmapv2.LatLng($endLat, $endLng));
+          bounds.extend(new Tmapv2.LatLng($driverLat, $driverLng));
+          map.fitBounds(bounds);
+        } catch (e) {
+          console.error("Tmap 초기화 에러: ", e);
         }
       }
 
-      function initMap() {
-        map = new Tmapv2.Map("map_div", {
-          center: new Tmapv2.LatLng($lat, $lng),
-          width: "100%",
-          height: "100%",
-          zoom: 16
-        });
-        
-        marker = new Tmapv2.Marker({
-          position: new Tmapv2.LatLng($lat, $lng),
-          map: map
-        });
+      function updateDriverPosition(lat, lng) {
+        if (driverMarker) {
+          var newPos = new Tmapv2.LatLng(lat, lng);
+          driverMarker.setPosition(newPos);
+        }
       }
 
-      window.onload = checkAndInit;
+      window.onload = function() {
+        if (typeof Tmapv2 !== 'undefined') {
+          initMap();
+        } else {
+          var checkExist = setInterval(function() {
+            if (typeof Tmapv2 !== 'undefined') {
+              initMap();
+              clearInterval(checkExist);
+            }
+          }, 100);
+        }
+      };
     </script>
   </body>
   </html>
   ''';
   }
 
-  // Flutter에서 기사 위치가 바뀔 때 호출하는 함수
-  void _updateMarker(double lat, double lng) {
-    _mapController.runJavaScript('updatePosition($lat, $lng);');
+  void _updateDriverMarker(double lat, double lng) {
+    _mapController.runJavaScript('if(typeof updateDriverPosition === "function") updateDriverPosition($lat, $lng);');
   }
 
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(trackingProvider);
+
+    // 데이터 변화 감지
+    ref.listen(trackingProvider, (previous, next) {
+      if (next.data != null) {
+        // 1. 처음 데이터 로드 시 지도 생성
+        if (_isFirstLoad) {
+          _loadMapHtml(next.data!);
+        } 
+        // 2. 이후 좌표 변경 시 마커만 업데이트
+        else if (previous?.data?.lat != next.data?.lat || previous?.data?.lng != next.data?.lng) {
+          _updateDriverMarker(next.data!.lat, next.data!.lng);
+        }
+      }
+    });
 
     if (state.isLoading || state.data == null) {
       return const Scaffold(
@@ -131,18 +193,11 @@ class _ShipperHistoryTrackingViewState extends ConsumerState<ShipperHistoryTrack
       ),
       body: Column(
         children: [
-          // 1. 상단 지도 영역 (화면의 약 35~40% 고정)
           SizedBox(
             height: MediaQuery.of(context).size.height * 0.35,
             width: double.infinity,
-            child: Stack(
-              children: [
-                WebViewWidget(controller: _mapController),
-              ],
-            ),
+            child: WebViewWidget(controller: _mapController),
           ),
-
-          // 2. 하단 상세 정보 및 타임라인 (나머지 영역 스크롤)
           Expanded(
             child: Container(
               decoration: const BoxDecoration(
@@ -160,15 +215,11 @@ class _ShipperHistoryTrackingViewState extends ConsumerState<ShipperHistoryTrack
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // 기사 및 차량 정보 섹션
                       _buildDriverSection(data),
-
                       const Padding(
                         padding: EdgeInsets.symmetric(vertical: 24),
                         child: Divider(height: 1, thickness: 1, color: borderGrey),
                       ),
-
-                      // 운송 현황 타임라인 섹션
                       _buildTimelineSection(data.timelines),
                     ],
                   ),
@@ -177,23 +228,6 @@ class _ShipperHistoryTrackingViewState extends ConsumerState<ShipperHistoryTrack
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  // --- UI 컴포넌트 분리 ---
-
-  Widget _buildStatusBadge(String status) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: jimlineNavy,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 4)],
-      ),
-      child: Text(
-        status,
-        style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
       ),
     );
   }
@@ -223,14 +257,13 @@ class _ShipperHistoryTrackingViewState extends ConsumerState<ShipperHistoryTrack
             ],
           ),
         ),
-        // 전화 버튼
         Container(
           decoration: BoxDecoration(
             color: const Color(0xFFF0F2FF),
             borderRadius: BorderRadius.circular(12),
           ),
           child: IconButton(
-            onPressed: () {}, // TODO: 전화 걸기 연동
+            onPressed: () {}, 
             icon: const Icon(Icons.phone_enabled, color: jimlineNavy),
           ),
         ),
@@ -263,7 +296,6 @@ class _ShipperHistoryTrackingViewState extends ConsumerState<ShipperHistoryTrack
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 타임라인 선과 아이콘
         Column(
           children: [
             Container(
@@ -290,7 +322,6 @@ class _ShipperHistoryTrackingViewState extends ConsumerState<ShipperHistoryTrack
           ],
         ),
         const SizedBox(width: 16),
-        // 텍스트 내용
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -308,7 +339,7 @@ class _ShipperHistoryTrackingViewState extends ConsumerState<ShipperHistoryTrack
                 item.time ?? "",
                 style: const TextStyle(fontSize: 12, color: textGrey),
               ),
-              const SizedBox(height: 20), // 항목 간 간격
+              const SizedBox(height: 20),
             ],
           ),
         ),

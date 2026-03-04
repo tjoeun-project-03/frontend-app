@@ -6,6 +6,10 @@ class TrackingModel {
   final String? carrierContact; // 추가: 기사님 연락처
   final double lat; // 위도
   final double lng; // 경도
+  final double? startLat;
+  final double? startLng;
+  final double? endLat;
+  final double? endLng;
   final Map<String, dynamic>? summary;
   final List<TimelineItemData> timelines;
 
@@ -17,9 +21,14 @@ class TrackingModel {
     this.carrierContact,
     this.lat = 37.5665, // 기본값
     this.lng = 126.9780,
+    this.startLat,
+    this.startLng,
+    this.endLat,
+    this.endLng,
     this.summary,
     required this.timelines,
   });
+
   TrackingModel copyWith({
     String? status,
     String? driverName,
@@ -28,6 +37,10 @@ class TrackingModel {
     String? carrierContact,
     double? lat,
     double? lng,
+    double? startLat,
+    double? startLng,
+    double? endLat,
+    double? endLng,
     List<TimelineItemData>? timelines,
   }) {
     return TrackingModel(
@@ -38,10 +51,13 @@ class TrackingModel {
       carrierContact: carrierContact ?? this.carrierContact,
       lat: lat ?? this.lat,
       lng: lng ?? this.lng,
+      startLat: startLat ?? this.startLat,
+      startLng: startLng ?? this.startLng,
+      endLat: endLat ?? this.endLat,
+      endLng: endLng ?? this.endLng,
       timelines: timelines ?? this.timelines,
     );
   }
-
 }
 
 class TimelineItemData {
