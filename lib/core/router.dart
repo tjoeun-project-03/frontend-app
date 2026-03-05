@@ -2,13 +2,11 @@ import 'package:flutter/material.dart';
 import '../main.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:path/path.dart';
 import '../views/auth/startView.dart';
 import '../views/auth/loginView.dart';
 import '../views/auth/roleSelectionView.dart';
 import '../views/auth/signupView.dart';
 import '../views/auth/licenseCameraView.dart';
-import '../views/shipper/home/shipperHomeView.dart';
 import '../views/shipper/shipperNavControllerView.dart';
 import '../views/shipper/home/shipperPaymentView.dart';
 import '../views/shipper/tracking/shipperEvaluationView.dart';
@@ -19,6 +17,7 @@ import '../views/shipper/mypage/shipperReservationView.dart';
 import '../views/shipper/mypage/shipperFavoriteAddressView.dart';
 import '../views/shipper/mypage/shipperFaqView.dart';
 import '../views/carrier/home/carrierHomeView.dart';
+import '../views/carrier/mypage/carrierOrderHistoryView.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -44,7 +43,6 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/license-camera',
         builder: (context, state) {
-          // signupView에서 보낸 데이터를 state.extra로 받아옵니다.
           final data = state.extra as Map<String, dynamic>;
           return LicenseCameraView(signupData: data);
         },
@@ -56,6 +54,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
           path: '/carrier-home',
           builder: (context, state) => const CarrierHomeView(),
+      ),
+      GoRoute(
+        path: '/carrier-order-history',
+        builder: (context, state) => const CarrierOrderHistoryView(),
       ),
       GoRoute(
           path: '/shipper-payment',
@@ -83,7 +85,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/shipper-history',
-        builder: (context, state) => const ShipperHistoryTrackingView(),
+        builder: (context, state) {
+          final orderId = state.extra as int;
+          return ShipperHistoryTrackingView(orderId: orderId);
+        },
       ),
       GoRoute(
         path: '/shipper-notice',
