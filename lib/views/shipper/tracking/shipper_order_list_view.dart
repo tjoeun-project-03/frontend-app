@@ -12,28 +12,27 @@ class ShipperOrderListView extends ConsumerWidget {
     final viewModel = ref.read(orderListProvider.notifier);
 
     const Color jimlineNavy = Color(0xFF1A2B88);
-    const Color jimlineNavyLight = Color(0xFFD1D5E7);
     const Color borderGrey = Color(0xFFEEEEEE);
     const Color bgGrey = Color(0xFFF5F5F5);
     const Color textGrey = Color(0xFF9E9E9E);
 
-    // --- 필터링 로직 ---
+    // --- 🚀 백엔드 OrderStatus Enum 기준으로 필터링 로직 수정 ---
     final filteredOrders = state.orders.where((order) {
-      final status = order.currentStatus;
+      final status = order.currentStatus?.toUpperCase() ?? '';
+
       if (state.selectedTabIndex == 0) {
-        // 1. 배차대기 (전체 탭을 배차대기로 변경)
-        // 서버 DTO에서 getDescription()이 "주문 생성"을 반환하므로 이를 체크
-        return status == "주문 생성";
-      }
+        // 1. 배차대기 (주문 생성 상태)
+        return status == 'CREATED';
+      } 
       else if (state.selectedTabIndex == 1) {
-        // 2. 배송중 (주문 생성도 아니고, 완료/취소도 아닌 중간 상태들)
-        return status != "주문 생성" && status != "배송 완료";
-      }
+        // 2. 배송중 (배차수락, 출발, 도착 상태 모두 포함)
+        return ['ACCEPTED', 'DEPARTED', 'ARRIVED'].contains(status);
+      } 
       else if (state.selectedTabIndex == 2) {
-        // 3. 완료
-        return status == "배송 완료" || status == "취소됨";
+        // 3. 완료/취소
+        return ['COMPLETED', 'CANCELED'].contains(status);
       }
-      return true; // 전체
+      return true; // 전체 (현재는 사용되지 않음)
     }).toList();
 
     if (state.isLoading) return const Center(child: CircularProgressIndicator(color: jimlineNavy));
@@ -56,7 +55,6 @@ class ShipperOrderListView extends ConsumerWidget {
           ),
         ),
 
-        // --- 리스트 본문 ---
         Expanded(
           child: RefreshIndicator(
             onRefresh: () => viewModel.fetchMyOrders(),
@@ -76,7 +74,6 @@ class ShipperOrderListView extends ConsumerWidget {
     );
   }
 
-  // --- 탭 아이템 빌더 (동일한 디자인 유지) ---
   Widget _buildTabItem(String label, bool isSelected, VoidCallback onTap) {
     return Expanded(
       child: GestureDetector(
@@ -99,24 +96,7 @@ class ShipperOrderListView extends ConsumerWidget {
       ),
     );
   }
-  Widget _buildSummaryBox(String title, String count, Color color, Color borderColor) {
-    return Expanded(
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: borderColor),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(title, style: const TextStyle(color: Color(0xFF9E9E9E), fontSize: 13)),
-            Text(count, style: TextStyle(color: color, fontSize: 18, fontWeight: FontWeight.bold)),
-          ],
-        ),
-      ),
-    );
-  }
-  // --- 기존 카드 디자인 래핑 ---
+
   Widget _buildOrderCard(BuildContext context, order, Color navy, Color bGrey, Color bgGrey, Color tGrey) {
     return GestureDetector(
       onTap: () {
@@ -140,9 +120,9 @@ class ShipperOrderListView extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(order.currentStatus ?? "배송중", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                  Text(order.currentStatus ?? "상태 미확인", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
                   const SizedBox(height: 4),
-                  Text("출발지: ${order.departure ?? "오류"}\n도착지: ${order.arrival ?? "오류"}",
+                  Text("출발지: ${order.departure ?? "-"}\n도착지: ${order.arrival ?? "-"}",
                       style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: navy)),
                   const SizedBox(height: 16),
                   Row(

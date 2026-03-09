@@ -32,18 +32,6 @@ class _OrderBoardViewState extends ConsumerState<OrderBoardView> {
       child: Column(
         children: [
           const SizedBox(height: 12),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.only(left: 16, bottom: 12),
-            child: Row(
-              children: [
-                _buildFilterChip("필터", isFirst: true),
-                _buildFilterChip("거리순"),
-                _buildFilterChip("차량 종류"),
-                _buildFilterChip("상하차방식"),
-              ],
-            ),
-          ),
           Expanded(
             child: RefreshIndicator(
               onRefresh: () => ref.read(availableOrderProvider.notifier).fetchAvailableOrders(),
