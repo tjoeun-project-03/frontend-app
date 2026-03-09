@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../viewmodels/auth/signup_vm.dart';
+import '../../viewmodels/auth/login_vm.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:daum_postcode_view/daum_postcode_view.dart';
 
@@ -11,7 +12,6 @@ class SignupView extends ConsumerStatefulWidget {
 }
 
 class _SignupViewState extends ConsumerState<SignupView> {
-  // 컨트롤러 정의
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _idController = TextEditingController();
@@ -110,48 +110,51 @@ class _SignupViewState extends ConsumerState<SignupView> {
                 const SizedBox(height: 16),
                 DropdownButtonFormField<String>(
                   value: signupState.carType, decoration: _inputDecoration("차종 선택"),
-                  items: ["1T", "1.4T", "2.5T", "3T", "5T"].map((t) => DropdownMenuItem(value: t, child: Text(t))).toList(),
+                  items: ["1T", "1.4T", "2.5T", "3.5T", "5T"].map((t) => DropdownMenuItem(value: t, child: Text(t))).toList(),
                   onChanged: (val) { ref.read(signupViewModelProvider.notifier).updateCarType(val!); _onInputChanged(); },
                 ),
                 CheckboxListTile(title: const Text("냉동/냉장 차량 여부"), value: signupState.freezer == 1, activeColor: jimlineNavy, onChanged: (val) { ref.read(signupViewModelProvider.notifier).toggleFreezer(val!); _onInputChanged(); }),
               ],
-
               const SizedBox(height: 48),
 
               ElevatedButton(
                 onPressed: signupState.isFormValid ? () async {
-                  // 🚀 서버 Enum 규격에 맞게 변환하는 맵 생성
                   final Map<String, String> carTypeMap = {
-                    "1T": "TON_1",
-                    "1.4T": "TON_1_4", // ⚠️ 서버 Enum에 TON_1_4가 없다면 추가해야 함
-                    "2.5T": "TON_2_5",
-                    "3.5T": "TON_3_5",     // ⚠️ 서버 Enum에 TON_3이 없다면 추가해야 함
-                    "5T": "TON_5",
+                    "1T": "TON_1", "1.4T": "TON_1_4", "2.5T": "TON_2_5", "3.5T": "TON_3_5", "5T": "TON_5",
                   };
+                  // 🚀 dynamic 타입 맵 사용
                   final Map<String, dynamic> requestData = {
                     "userId": _idController.text, "userPw": _passwordController.text, "userName": _nameController.text,
                     "email": _emailController.text, "phone": _phoneController.text, "zipcode": _postcodeController.text,
-                    "address": _addressController.text, "detailAddress": _detailAddressController.text, "corpReg": null,
+                    "address": _addressController.text, "detailAddress": _detailAddressController.text,
                   };
 
                   if (isDriver) {
-                    requestData.addAll({"car": _carController.text, "carNum": _carNumController.text, "carType": carTypeMap[signupState.carType] ?? signupState.carType, "freezer": signupState.freezer, "license": "PENDING", "carReg": "PENDING"});
+                    requestData.addAll({
+                      "car": _carController.text, "carNum": _carNumController.text, 
+                      "carType": carTypeMap[signupState.carType] ?? signupState.carType, 
+                      "freezer": signupState.freezer // 이제 int도 허용됨
+                    });
                     _showLicenseGuide(context, requestData);
                   } else {
-                    // 가입 요청 및 서버 에러 처리
-                    String? error = await ref.read(signupViewModelProvider.notifier).registerUser(requestData);
+                    final error = await ref.read(signupViewModelProvider.notifier).registerUser(requestData, autoLogin: true);
                     if (!mounted) return;
+                    
                     if (error == null) {
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("회원가입 완료! 로그인해주세요. 🎉")));
-                      context.go('/login');
+                      // 🚀 LoginViewModel의 상태(watch)를 통해 역할 확인
+                      final loginState = ref.read(loginViewModelProvider);
+                      final role = loginState.userRole;
+                      
+                      if (role == 'ROLE_SHIPPER') context.go('/shipper-home');
+                      else if (role == 'ROLE_CARRIER') context.go('/carrier-home');
+                      else context.go('/login'); 
                     } else {
-                      // 서버가 던진 "이미 존재하는 아이디입니다." 등의 메시지 표시
                       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error)));
                     }
                   }
                 } : null,
                 style: ElevatedButton.styleFrom(backgroundColor: signupState.isFormValid ? jimlineNavy : Colors.grey[400], minimumSize: const Size(double.infinity, 60), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
-                child: Text(isDriver ? "다음 (자격증 촬영)" : "가입 완료", style: const TextStyle(fontSize: 18, color: Colors.white)),
+                child: Text(isDriver ? "다음 (자격증 촬영)" : "가입 및 로그인", style: const TextStyle(fontSize: 18, color: Colors.white)),
               ),
             ],
           ),

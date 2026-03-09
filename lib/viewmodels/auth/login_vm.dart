@@ -1,17 +1,18 @@
-// lib/viewmodels/auth/login_vm.dart
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:jimline/services/common/api_service.dart';
 
 class LoginState {
   final bool isLoading;
   final String? errorMessage;
+  final String? userRole; // 🚀 역할(Role) 필드 추가
 
-  LoginState({this.isLoading = false, this.errorMessage});
+  LoginState({this.isLoading = false, this.errorMessage, this.userRole});
 
-  LoginState copyWith({bool? isLoading, String? errorMessage}) {
+  LoginState copyWith({bool? isLoading, String? errorMessage, String? userRole}) {
     return LoginState(
       isLoading: isLoading ?? this.isLoading,
       errorMessage: errorMessage ?? this.errorMessage,
+      userRole: userRole ?? this.userRole,
     );
   }
 }
@@ -32,29 +33,22 @@ class LoginViewModel extends StateNotifier<LoginState> {
 
       if (response.statusCode == 200) {
         final data = response.data;
-        print("서버 응답 데이터: ${response.data}");
+        final String role = data['role']?.toString() ?? "";
 
         // 🔒 저장소에 토큰 저장
-        try {
-          final storage = _api.getStorage();
-          await storage.write(key: 'access_token', value: data['accessToken']);
-          await storage.write(key: 'refresh_token', value: data['refreshToken']);
-          final String role = data['role']?.toString() ?? "";
-          await storage.write(key: 'user_role', value: role);
+        final storage = _api.getStorage();
+        await storage.write(key: 'access_token', value: data['accessToken']);
+        await storage.write(key: 'refresh_token', value: data['refreshToken']);
+        await storage.write(key: 'user_role', value: role);
 
-          state = state.copyWith(isLoading: false);
-          return role;
-        } catch (storageError) {
-          print("저장소 에러: $storageError");
-          state = state.copyWith(isLoading: false);
-          return data['role']?.toString() ?? "";
-        }
+        // 🚀 상태에 역할 저장
+        state = state.copyWith(isLoading: false, userRole: role);
+        return role;
       } else {
         state = state.copyWith(isLoading: false, errorMessage: "아이디 또는 비밀번호를 확인해주세요.");
         return null;
       }
     } catch (e) {
-      print("로그인 에러: $e");
       state = state.copyWith(isLoading: false, errorMessage: "서버 연결에 실패했습니다.");
       return null;
     }

@@ -13,7 +13,7 @@ class OrderResponse {
   final String consigneeContact;
   final double weight;
   final String content;
-  final String clientNote;
+  final String? clientNote;
   final double distance;
   final int duration;
   final double? startLat;
@@ -56,6 +56,7 @@ class OrderResponse {
     return OrderResponse(
       orderId: json['orderId'] ?? 0,
       invoiceNo: json['invoiceNo'] ?? '',
+      status: (json['status'] ?? json['currentStatus'] ?? 'CREATED').toString().toUpperCase(),
       created: json['created'] ?? '',
       price: json['price'] ?? 0,
       carrierId: json['carrierId']?.toString() ?? '',
@@ -67,10 +68,9 @@ class OrderResponse {
       weight: (json['weight'] as num?)?.toDouble() ?? 0.0,
       consigneeName: json['consigneeName'] ?? '',
       consigneeContact: json['consigneeContact'] ?? '',
-      clientNote: json['clientNote'] ?? '',
-      distance: (json['distance'] as num?)?.toDouble() ?? 0.0,
+      clientNote: json['clientNote'],
+      distance: parseDouble(json['distance']) ?? 0.0,
       duration: (json['duration'] as num?)?.toInt() ?? 0,
-      status: (json['status'] ?? json['currentStatus'] ?? 'CREATED').toString().toUpperCase(),
       startLat: parseDouble(json['startLat']),
       startLng: parseDouble(json['startLng']),
       endLat: parseDouble(json['endLat']),

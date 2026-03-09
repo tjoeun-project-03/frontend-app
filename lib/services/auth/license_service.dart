@@ -1,37 +1,40 @@
-// lib/services/license_service.dart
 import 'package:dio/dio.dart';
-import 'package:jimline/services/common/api_service.dart';
 
 class LicenseService {
-  // ApiService에 이미 설정된 dio 인스턴스를 그대로 사용합니다.
-  final Dio _dio = ApiService().dio;
+  // 🚀 인터셉터(401 처리 등)가 없는 순수한 Dio 인스턴스 사용
+  final Dio _dio = Dio();
 
   Future<Map<String, dynamic>> verifyLicense(String imagePath) async {
     try {
-      final String pythonUrl = "http://192.168.219.106:8000/api/v1/license/verify";
+      // 🚀 파이썬 서버 주소 (8000 포트)
+      final String pythonUrl = "http://10.0.2.2:8000/api/v1/license/verify";
 
       FormData formData = FormData.fromMap({
         "file": await MultipartFile.fromFile(imagePath, filename: "license.jpg"),
-        "transport_type": "2", // 화물운송종사자 자격증
+        "transport_type": "2",
       });
 
-      // 🚀 해당 요청만 60초간 기다리도록 개별 옵션 설정
       Response response = await _dio.post(
         pythonUrl,
         data: formData,
         options: Options(
           receiveTimeout: const Duration(seconds: 60),
+          sendTimeout: const Duration(seconds: 60),
         ),
       );
 
       if (response.statusCode == 200) {
-        return response.data; // {"status": "success", ...}
+        // 서버 응답이 Map인지 확인 후 반환
+        if (response.data is Map) {
+          return Map<String, dynamic>.from(response.data);
+        }
+        return {"status": "fail", "message": "잘못된 서버 응답 형식"};
       } else {
-        return {"status": "fail", "message": "서버 응답 오류"};
+        return {"status": "fail", "message": "서버 응답 오류: ${response.statusCode}"};
       }
     } catch (e) {
       print("자격증 검증 에러: $e");
-      return {"status": "error", "message": "연결 실패: $e"};
+      return {"status": "error", "message": "연결 실패"};
     }
   }
 }

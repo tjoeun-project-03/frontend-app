@@ -18,8 +18,8 @@ import '../views/shipper/mypage/shipperFavoriteAddressView.dart';
 import '../views/shipper/mypage/shipperFaqView.dart';
 import '../views/carrier/home/carrierHomeView.dart';
 import '../views/carrier/home/orderDetailView.dart';
+import '../views/shipper/tracking/shipperHistoryTrackingView.dart'; // 🚀 추가
 import '../models/carrier/order_model.dart';
-import '../views/carrier/mypage/carrierOrderHistoryView.dart';
 import '../views/common/reportListView.dart';
 import '../views/common/reportCreateView.dart';
 
@@ -59,7 +59,6 @@ final routerProvider = Provider<GoRouter>((ref) {
           path: '/carrier-home',
           builder: (context, state) => const CarrierHomeView(),
       ),
-      // 🚀 차주 오더 상세 페이지 추가
       GoRoute(
         path: '/carrier-order-detail',
         builder: (context, state) {
@@ -108,8 +107,13 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/shipper-history',
+        builder: (context, state) => const ShipperOrderListView(),
+      ),
+      // 🚀 화주용 배송 상세 추적 경로 추가 확인
+      GoRoute(
+        path: '/shipper-tracking/:orderId',
         builder: (context, state) {
-          final orderId = state.extra as int;
+          final orderId = int.parse(state.pathParameters['orderId']!);
           return ShipperHistoryTrackingView(orderId: orderId);
         },
       ),
