@@ -128,7 +128,6 @@ class CarrierProfileViewModel extends StateNotifier<CarrierProfileState> {
         allOrders: orders,
         isLoading: false,
       );
-      print("메모: 통계 계산 완료 - 전체:${orders.length}, 완료:$completedCount, 비율:${totalCompletionRate.toStringAsFixed(1)}%");
 
     } catch (e) {
       print("메모: 프로필 및 통계 조회 최종 실패 - $e");
