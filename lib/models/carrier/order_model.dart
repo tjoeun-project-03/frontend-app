@@ -41,6 +41,53 @@ class OrderResponse {
     this.endLng,
   });
 
+  // 🚀 상태 업데이트를 위한 copyWith
+  OrderResponse copyWith({String? status}) {
+    return OrderResponse(
+      orderId: orderId,
+      invoiceNo: invoiceNo,
+      status: status ?? this.status,
+      created: created,
+      price: price,
+      departure: departure,
+      arrival: arrival,
+      content: content,
+      carType: carType,
+      weight: weight,
+      consigneeName: consigneeName,
+      consigneeContact: consigneeContact,
+      clientNote: clientNote,
+      distance: distance,
+      duration: duration,
+      startLat: startLat,
+      startLng: startLng,
+      endLat: endLat,
+      endLng: endLng,
+    );
+  }
+
+  // 🚀 누락되었던 Getter들 복구
+  String get statusText {
+    final s = status.toUpperCase();
+    if (s.contains('CREATED')) return '주문 생성';
+    if (s.contains('ACCEPTED')) return '배차 완료';
+    if (s.contains('DEPARTED')) return '출발';
+    if (s.contains('ARRIVED')) return '도착';
+    if (s.contains('COMPLETED')) return '배송 완료';
+    if (s.contains('CANCELED')) return '취소됨';
+    return status;
+  }
+
+  String get formattedDate {
+    try {
+      if (created.isEmpty) return "날짜 정보 없음";
+      DateTime dt = DateTime.parse(created);
+      return "${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}";
+    } catch (e) {
+      return created;
+    }
+  }
+
   factory OrderResponse.fromJson(Map<String, dynamic> json) {
     double? parseDouble(dynamic value) {
       if (value == null) return null;
@@ -52,7 +99,7 @@ class OrderResponse {
     return OrderResponse(
       orderId: json['orderId'] ?? 0,
       invoiceNo: json['invoiceNo'] ?? '',
-      status: (json['status'] ?? json['currentStatus'] ?? 'CREATED').toString().toUpperCase(),
+      status: (json['status'] ?? json['currentStatus'] ?? 'CREATED').toString(),
       created: json['created'] ?? '',
       price: json['price'] ?? 0,
       departure: json['departure'] ?? '',
@@ -70,27 +117,5 @@ class OrderResponse {
       endLat: parseDouble(json['endLat']),
       endLng: parseDouble(json['endLng']),
     );
-  }
-
-  // 상태 한글 변환
-  String get statusText {
-    switch (status) {
-      case 'CREATED': return '예약완료';
-      case 'PROCEEDING': return '운송중';
-      case 'COMPLETED': return '운송완료';
-      case 'CANCELLED': return '취소됨';
-      default: return status;
-    }
-  }
-
-  // 날짜 포맷팅 (YYYY-MM-DD)
-  String get formattedDate {
-    try {
-      if (created.isEmpty) return "";
-      DateTime dt = DateTime.parse(created);
-      return "${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}";
-    } catch (e) {
-      return created;
-    }
   }
 }

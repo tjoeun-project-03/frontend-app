@@ -10,7 +10,6 @@ import '../views/auth/licenseCameraView.dart';
 import '../views/shipper/shipperNavControllerView.dart';
 import '../views/shipper/home/shipperPaymentView.dart';
 import '../views/shipper/tracking/shipperEvaluationView.dart';
-import '../views/shipper/tracking/shipperHistoryTrackingView.dart';
 import '../views/shipper/mypage/shipperNoticeView.dart';
 import '../views/shipper/mypage/shipperInquiryView.dart';
 import '../views/shipper/mypage/shipperReservationView.dart';
@@ -18,32 +17,20 @@ import '../views/shipper/mypage/shipperFavoriteAddressView.dart';
 import '../views/shipper/mypage/shipperFaqView.dart';
 import '../views/carrier/home/carrierHomeView.dart';
 import '../views/carrier/home/orderDetailView.dart';
-import '../views/shipper/tracking/shipperHistoryTrackingView.dart'; // 🚀 추가
+import '../views/shipper/tracking/shipper_order_list_view.dart';
+import '../views/shipper/tracking/shipperHistoryTrackingView.dart';
+import '../views/carrier/home/carrierRecommendationView.dart'; // 🚀 추가
 import '../models/carrier/order_model.dart';
-import '../views/common/reportListView.dart';
-import '../views/common/reportCreateView.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     navigatorKey: navigatorKey,
     initialLocation: '/start',
     routes: [
-      GoRoute(
-        path: '/start',
-        builder: (context, state) => const StartView(),
-      ),
-      GoRoute(
-        path: '/login',
-        builder: (context, state) => const LoginView(),
-      ),
-      GoRoute(
-          path: '/role-selection',
-          builder: (context, state) => const RoleSelectionView(),
-      ),
-      GoRoute(
-          path: '/signup',
-          builder: (context, state) => const SignupView(),
-      ),
+      GoRoute(path: '/start', builder: (context, state) => const StartView()),
+      GoRoute(path: '/login', builder: (context, state) => const LoginView()),
+      GoRoute(path: '/role-selection', builder: (context, state) => const RoleSelectionView()),
+      GoRoute(path: '/signup', builder: (context, state) => const SignupView()),
       GoRoute(
         path: '/license-camera',
         builder: (context, state) {
@@ -51,14 +38,8 @@ final routerProvider = Provider<GoRouter>((ref) {
           return LicenseCameraView(signupData: data);
         },
       ),
-      GoRoute(
-          path: '/shipper-home',
-          builder: (context, state) => const ShipperNavController(),
-      ),
-      GoRoute(
-          path: '/carrier-home',
-          builder: (context, state) => const CarrierHomeView(),
-      ),
+      GoRoute(path: '/shipper-home', builder: (context, state) => const ShipperNavController()),
+      GoRoute(path: '/carrier-home', builder: (context, state) => const CarrierHomeView()),
       GoRoute(
         path: '/carrier-order-detail',
         builder: (context, state) {
@@ -66,19 +47,15 @@ final routerProvider = Provider<GoRouter>((ref) {
           return OrderDetailView(order: order);
         },
       ),
+      // 🚀 차주 복귀 추천 경로 추가
       GoRoute(
-        path: '/carrier-order-history',
-        builder: (context, state) => const CarrierOrderHistoryView(),
-      ),
-      GoRoute(
-        path: '/report-list',
-        builder: (context, state) => const ReportListView(),
-      ),
-      GoRoute(
-        path: '/report-create',
+        path: '/carrier-recommendation',
         builder: (context, state) {
-          final orderId = state.extra as int;
-          return ReportCreateView(orderId: orderId);
+          final data = state.extra as Map<String, dynamic>;
+          return CarrierRecommendationView(
+            currentLat: data['lat'] as double,
+            currentLng: data['lng'] as double,
+          );
         },
       ),
       GoRoute(
@@ -101,15 +78,8 @@ final routerProvider = Provider<GoRouter>((ref) {
             );
           }
           ),
-      GoRoute(
-        path: '/evaluation',
-        builder: (context, state) => const ShipperEvaluationView(),
-      ),
-      GoRoute(
-        path: '/shipper-history',
-        builder: (context, state) => const ShipperOrderListView(),
-      ),
-      // 🚀 화주용 배송 상세 추적 경로 추가 확인
+      GoRoute(path: '/evaluation', builder: (context, state) => const ShipperEvaluationView()),
+      GoRoute(path: '/shipper-history', builder: (context, state) => const ShipperOrderListView()),
       GoRoute(
         path: '/shipper-tracking/:orderId',
         builder: (context, state) {
@@ -117,26 +87,11 @@ final routerProvider = Provider<GoRouter>((ref) {
           return ShipperHistoryTrackingView(orderId: orderId);
         },
       ),
-      GoRoute(
-        path: '/shipper-notice',
-        builder: (context, state) => const ShipperNoticeView(),
-      ),
-      GoRoute(
-        path: '/shipper-inquiry',
-        builder: (context, state) => const ShipperInquiryView(),
-      ),
-      GoRoute(
-        path: '/shipper-reservation-list',
-        builder: (context, state) => const ShipperReservationView(),
-      ),
-      GoRoute(
-        path: '/shipper-favorite-address',
-        builder: (context, state) => const ShipperFavoriteAddressView(),
-      ),
-      GoRoute(
-        path: '/shipper-faq',
-        builder: (context, state) => const ShipperFaqView(),
-      ),
+      GoRoute(path: '/shipper-notice', builder: (context, state) => const ShipperNoticeView()),
+      GoRoute(path: '/shipper-inquiry', builder: (context, state) => const ShipperInquiryView()),
+      GoRoute(path: '/shipper-reservation-list', builder: (context, state) => const ShipperReservationView()),
+      GoRoute(path: '/shipper-favorite-address', builder: (context, state) => const ShipperFavoriteAddressView()),
+      GoRoute(path: '/shipper-faq', builder: (context, state) => const ShipperFaqView()),
     ],
   );
 });

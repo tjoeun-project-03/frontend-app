@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:geolocator/geolocator.dart';
 import 'orderBoardView.dart';
+import 'carrierTrackingView.dart';
 import '../mypage/carrierMyPageView.dart';
-import '../../../viewmodels/carrier/carrier_tracking_vm.dart';
-import '../../common/reportButton.dart';
+import '../../../viewmodels/carrier/active_order_vm.dart';
 
 class CarrierHomeView extends ConsumerStatefulWidget {
   const CarrierHomeView({super.key});
@@ -16,82 +17,27 @@ class _CarrierHomeViewState extends ConsumerState<CarrierHomeView> {
   int _selectedIndex = 0;
   final Color primaryNavy = const Color(0xFF1A2B88);
 
-  List<Widget> get _screens => [
-    const OrderBoardView(),
-    _buildDeliveryTab(),
-    const Center(child: Text("정산 내역")),
-    const CarrierMyPageView(),
-  ];
-
-  Widget _buildDeliveryTab() {
-    final isTracking = ref.watch(carrierTrackingProvider);
-    
-    return SingleChildScrollView(
-      child: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const SizedBox(height: 40),
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: isTracking ? Colors.green.withOpacity(0.1) : Colors.grey.withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.local_shipping,
-                size: 80,
-                color: isTracking ? Colors.green : Colors.grey,
-              ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              isTracking ? "실시간 위치 공유 중" : "운행 대기 중",
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: isTracking ? Colors.green : Colors.black54,
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              "운행 시작 버튼을 누르면 화주에게\n내 위치가 실시간으로 전달됩니다.",
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey),
-            ),
-            const SizedBox(height: 40),
-            SizedBox(
-              width: double.infinity,
-              height: 56,
-              child: ElevatedButton(
-                onPressed: () {
-                  if (isTracking) {
-                    ref.read(carrierTrackingProvider.notifier).stopTracking();
-                  } else {
-                    // 테스트용 orderId 62
-                    ref.read(carrierTrackingProvider.notifier).startTracking(62);
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: isTracking ? Colors.red : primaryNavy,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  elevation: 0,
-                ),
-                child: Text(
-                  isTracking ? "운행 종료 (위치 공유 중지)" : "운행 시작 (위치 공유)",
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() => ref.read(activeOrderProvider.notifier).syncWithServer());
   }
 
   @override
   Widget build(BuildContext context) {
+    final activeState = ref.watch(activeOrderProvider);
+    
+    if (!activeState.isInitialized) {
+      return const Scaffold(
+        backgroundColor: Colors.white,
+        body: Center(child: CircularProgressIndicator(color: Color(0xFF1A2B88))),
+      );
+    }
+
+    if (activeState.activeOrder != null) {
+      return const CarrierTrackingView();
+    }
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -102,11 +48,22 @@ class _CarrierHomeViewState extends ConsumerState<CarrierHomeView> {
           ["오더 보드", "내 운송", "정산 내역", "마이 페이지"][_selectedIndex],
           style: TextStyle(color: primaryNavy, fontWeight: FontWeight.bold),
         ),
+        // 🚀 오더보드 탭일 때만 우측 상단에 복귀 추천 버튼 노출
+        actions: _selectedIndex == 0 ? [
+          TextButton.icon(
+            onPressed: _navigateToRecommendation,
+            icon: const Icon(Icons.auto_awesome, size: 18, color: Colors.amber),
+            label: Text("복귀 추천", style: TextStyle(color: primaryNavy, fontWeight: FontWeight.bold)),
+          ),
+          const SizedBox(width: 8),
+        ] : null,
       ),
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: _screens,
-      ),
+      body: IndexedStack(index: _selectedIndex, children: [
+        const OrderBoardView(),
+        const Center(child: Text("내 운송")),
+        const Center(child: Text("정산 내역")),
+        const CarrierMyPageView(),
+      ]),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: (index) => setState(() => _selectedIndex = index),
@@ -121,5 +78,23 @@ class _CarrierHomeViewState extends ConsumerState<CarrierHomeView> {
         ],
       ),
     );
+  }
+
+  // 🚀 현재 위치를 기반으로 추천 페이지 이동
+  Future<void> _navigateToRecommendation() async {
+    showDialog(context: context, barrierDismissible: false, builder: (_) => const Center(child: CircularProgressIndicator()));
+    
+    try {
+      Position position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+      if (mounted) {
+        Navigator.pop(context); // 로딩 닫기
+        context.push('/carrier-recommendation', extra: {'lat': position.latitude, 'lng': position.longitude});
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("위치 정보를 가져올 수 없습니다.")));
+      }
+    }
   }
 }
