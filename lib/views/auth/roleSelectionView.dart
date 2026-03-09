@@ -68,11 +68,11 @@ class RoleSelectionView extends ConsumerWidget {
             // 다음 단계 버튼
             SizedBox(
               width: double.infinity,
-              height: 30,
+              height: 60, // 높이 수정
               child: ElevatedButton(
-                onPressed: selectedRole != UserRole.none
-                    ? () => context.push('/signup') // 다음 상세 정보 입력 화면으로
-                    : null, // 선택 안됐을 시 비활성화
+                onPressed: selectedRole != null // 🚀 none 대신 null 체크로 변경
+                    ? () => context.push('/signup') 
+                    : null,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: primaryNavy,
                   disabledBackgroundColor: Colors.grey[300],
@@ -138,7 +138,7 @@ class RoleSelectionView extends ConsumerWidget {
                     ],
                   ),
                 ),
-                Image.asset(imagePath, width: 100), // 시안의 이미지 배치
+                Image.asset(imagePath, width: 100), 
               ],
             ),
           ),
