@@ -22,12 +22,11 @@ class _ShipperHomeViewState extends State<ShipperHomeView> {
   double _estimatedWeight = 11.0;
   String? _selectedCategory = "가전";
 
-  // 🚀 파이썬 서버 리턴값에 맞춘 상태 변수들
-  int _serverPrice = 0;           // 최종 결제 금액 (total_cost)
-  int _baseCost = 0;             // 기본 운임 (base_cost)
-  int _surchargeAmount = 0;      // 할증 금액 (total_surcharge_amount)
-  double _distance = 0.0;        // 이동 거리 (distance_km)
-  int _duration = 0;             // 소요 시간 (duration_min)
+  int _serverPrice = 0;           
+  int _baseCost = 0;             
+  int _surchargeAmount = 0;      
+  double _distance = 0.0;        
+  int _duration = 0;             
 
   bool _isCalculating = false;
 
@@ -39,7 +38,6 @@ class _ShipperHomeViewState extends State<ShipperHomeView> {
   final TextEditingController _endController = TextEditingController();
   final Color jimlineNavy = const Color(0xFF1A2B88);
 
-  // 🚀 입력 폼 및 상태 초기화 메서드
   void _resetForm() {
     _mapController.runJavaScript('clearMap();');
     setState(() {
@@ -59,7 +57,6 @@ class _ShipperHomeViewState extends State<ShipperHomeView> {
     });
   }
 
-  // 🚀 파이썬 API 연동 로직 (수정됨)
   Future<void> _fetchEstimate() async {
     if (startLat == null || endLat == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -70,7 +67,6 @@ class _ShipperHomeViewState extends State<ShipperHomeView> {
     setState(() => _isCalculating = true);
 
     try {
-      // 파이썬 서버의 endpoint와 데이터 구조에 맞춤
       final response = await Dio().post(
         "http://10.0.2.2:8000/api/v1/orders/estimate",
         data: {
@@ -79,12 +75,11 @@ class _ShipperHomeViewState extends State<ShipperHomeView> {
           "end_lat": endLat,
           "end_lng": endLng,
           "car_type": _mapWeightToCarType(_estimatedWeight),
-          // 파이썬 Pydantic 모델(EstimateRequest)에 content가 없으므로 일단 제외하거나 백엔드 모델 수정 필요
         },
       );
 
       if (response.statusCode == 200 && response.data['success'] == true) {
-        final data = response.data['data']; // 파이썬 리턴값의 data depth 접근
+        final data = response.data['data'];
 
         setState(() {
           _serverPrice = data['total_cost'];
@@ -103,7 +98,6 @@ class _ShipperHomeViewState extends State<ShipperHomeView> {
     }
   }
 
-  // 주소 검색 및 마커 설정 로직 (기존과 동일)
   void _onSearchChanged(String val, String type) {
     if (_debounce?.isActive ?? false) _debounce!.cancel();
     _debounce = Timer(const Duration(milliseconds: 500), () {
@@ -165,7 +159,7 @@ class _ShipperHomeViewState extends State<ShipperHomeView> {
             _buildCategoryList(),
             _buildWeightSlider(),
             _buildEstimateButton(),
-            if (_serverPrice > 0) _buildEstimateDetail(), // 결과가 있을 때만 표시
+            if (_serverPrice > 0) _buildEstimateDetail(),
             _buildPriceSection(),
             _buildOrderButton(),
           ],
@@ -174,7 +168,6 @@ class _ShipperHomeViewState extends State<ShipperHomeView> {
     );
   }
 
-  // 🚀 상세 견적 정보 위젯 (파이썬 리턴값 반영)
   Widget _buildEstimateDetail() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -194,7 +187,6 @@ class _ShipperHomeViewState extends State<ShipperHomeView> {
     );
   }
 
-  // 가격 포맷팅 유틸 (1,000원 단위 콤마)
   String _formatPrice(int price) => price.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]},');
 
   Widget _detailRow(String label, String value) => Padding(
@@ -204,8 +196,6 @@ class _ShipperHomeViewState extends State<ShipperHomeView> {
       Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14))
     ]),
   );
-
-  // --- 기존 UI 컴포넌트들 ---
 
   Widget _buildSearchCard() => Padding(
     padding: const EdgeInsets.all(16.0),

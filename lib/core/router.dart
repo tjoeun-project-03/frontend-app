@@ -10,6 +10,7 @@ import '../views/auth/licenseCameraView.dart';
 import '../views/shipper/shipperNavControllerView.dart';
 import '../views/shipper/home/shipperPaymentView.dart';
 import '../views/shipper/tracking/shipperEvaluationView.dart';
+import '../views/shipper/tracking/shipperHistoryTrackingView.dart';
 import '../views/shipper/mypage/shipperNoticeView.dart';
 import '../views/shipper/mypage/shipperInquiryView.dart';
 import '../views/shipper/mypage/shipperReservationView.dart';
@@ -17,9 +18,10 @@ import '../views/shipper/mypage/shipperFavoriteAddressView.dart';
 import '../views/shipper/mypage/shipperFaqView.dart';
 import '../views/carrier/home/carrierHomeView.dart';
 import '../views/carrier/home/orderDetailView.dart';
-import '../views/shipper/tracking/shipper_order_list_view.dart';
 import '../views/shipper/tracking/shipperHistoryTrackingView.dart'; // 🚀 추가
 import '../models/carrier/order_model.dart';
+import '../views/common/reportListView.dart';
+import '../views/common/reportCreateView.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -62,6 +64,21 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final order = state.extra as OrderResponse;
           return OrderDetailView(order: order);
+        },
+      ),
+      GoRoute(
+        path: '/carrier-order-history',
+        builder: (context, state) => const CarrierOrderHistoryView(),
+      ),
+      GoRoute(
+        path: '/report-list',
+        builder: (context, state) => const ReportListView(),
+      ),
+      GoRoute(
+        path: '/report-create',
+        builder: (context, state) {
+          final orderId = state.extra as int;
+          return ReportCreateView(orderId: orderId);
         },
       ),
       GoRoute(
