@@ -36,7 +36,7 @@ class OrderResponse {
     required this.consigneeContact,
     required this.weight,
     required this.content,
-    required this.clientNote,
+    this.clientNote,
     required this.distance,
     required this.duration,
     this.startLat,
@@ -56,7 +56,7 @@ class OrderResponse {
     return OrderResponse(
       orderId: json['orderId'] ?? 0,
       invoiceNo: json['invoiceNo'] ?? '',
-      status: (json['status'] ?? json['currentStatus'] ?? 'CREATED').toString().toUpperCase(),
+      status: (json['currentStatus'] ?? json['status'] ?? 'CREATED').toString().toUpperCase(),
       created: json['created'] ?? '',
       price: json['price'] ?? 0,
       carrierId: json['carrierId']?.toString() ?? '',

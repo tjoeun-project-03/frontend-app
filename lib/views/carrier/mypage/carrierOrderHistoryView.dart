@@ -86,6 +86,7 @@ class _CarrierOrderHistoryViewState extends ConsumerState<CarrierOrderHistoryVie
                             _buildInfoRow("송장번호", order.invoiceNo),
                             _buildInfoRow("화주 ID", order.shipperId),
                             _buildInfoRow("차주 ID", order.carrierId),
+                            _buildInfoRow("차주 ID", order.carrierId),
                             const SizedBox(height: 8),
                             Row(
                               children: [
