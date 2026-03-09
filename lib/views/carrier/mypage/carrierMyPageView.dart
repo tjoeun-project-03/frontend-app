@@ -65,14 +65,7 @@ class _CarrierMyPageViewState extends ConsumerState<CarrierMyPageView> {
                     style: TextStyle(color: Colors.green, fontSize: 12)),
               ],
             ),
-            const SizedBox(height: 12),
-            Center(
-              child: TextButton(
-                onPressed: () => context.push('/carrier-order-history'), 
-                child: const Text("전체 내역 상세 보기 →", style: TextStyle(color: Color(0xFF1A237E)))
-              )
-            ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 32),
 
             // 4. 운행 통계 그리드 (실시간 계산값 반영)
             const Text("운행 통계", style: TextStyle(color: Color(0xFF1A237E), fontSize: 20, fontWeight: FontWeight.bold)),

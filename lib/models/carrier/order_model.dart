@@ -4,13 +4,15 @@ class OrderResponse {
   final String status;
   final String created;
   final int price;
+  final String carrierId;
+  final String shipperId;
   final String departure;
   final String arrival;
-  final String content;
   final String carType;
-  final double weight;
   final String consigneeName;
   final String consigneeContact;
+  final double weight;
+  final String content;
   final String? clientNote;
   final double distance;
   final int duration;
@@ -25,13 +27,15 @@ class OrderResponse {
     required this.status,
     required this.created,
     required this.price,
+    required this.carrierId,
+    required this.shipperId,
     required this.departure,
     required this.arrival,
-    required this.content,
     required this.carType,
-    required this.weight,
     required this.consigneeName,
     required this.consigneeContact,
+    required this.weight,
+    required this.content,
     this.clientNote,
     required this.distance,
     required this.duration,
@@ -99,9 +103,11 @@ class OrderResponse {
     return OrderResponse(
       orderId: json['orderId'] ?? 0,
       invoiceNo: json['invoiceNo'] ?? '',
-      status: (json['status'] ?? json['currentStatus'] ?? 'CREATED').toString(),
+      status: (json['currentStatus'] ?? json['status'] ?? 'CREATED').toString().toUpperCase(),
       created: json['created'] ?? '',
       price: json['price'] ?? 0,
+      carrierId: json['carrierId']?.toString() ?? '',
+      shipperId: json['shipperId']?.toString() ?? '',
       departure: json['departure'] ?? '',
       arrival: json['arrival'] ?? '',
       content: json['content'] ?? '',
@@ -117,5 +123,25 @@ class OrderResponse {
       endLat: parseDouble(json['endLat']),
       endLng: parseDouble(json['endLng']),
     );
+  }
+
+  String get statusText {
+    switch (status) {
+      case 'CREATED': return '예약완료';
+      case 'PROCEEDING': return '운송중';
+      case 'COMPLETED': return '운송완료';
+      case 'CANCELLED': return '취소됨';
+      default: return status;
+    }
+  }
+
+  String get formattedDate {
+    try {
+      if (created.isEmpty) return "";
+      DateTime dt = DateTime.parse(created);
+      return "${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}";
+    } catch (e) {
+      return created;
+    }
   }
 }

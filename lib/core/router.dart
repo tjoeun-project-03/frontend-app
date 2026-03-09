@@ -19,8 +19,10 @@ import '../views/carrier/home/carrierHomeView.dart';
 import '../views/carrier/home/orderDetailView.dart';
 import '../views/shipper/tracking/shipper_order_list_view.dart';
 import '../views/shipper/tracking/shipperHistoryTrackingView.dart';
-import '../views/carrier/home/carrierRecommendationView.dart'; // 🚀 추가
+import '../views/carrier/home/carrierRecommendationView.dart';
 import '../models/carrier/order_model.dart';
+import '../views/common/reportListView.dart';
+import '../views/common/reportCreateView.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -41,15 +43,26 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/shipper-home', builder: (context, state) => const ShipperNavController()),
       GoRoute(path: '/carrier-home', builder: (context, state) => const CarrierHomeView()),
       GoRoute(
-        path: '/carrier-order-detail',
+        path: '/carrier-recommendation',
         builder: (context, state) {
-          final order = state.extra as OrderResponse;
-          return OrderDetailView(order: order);
+          final data = state.extra as Map<String, dynamic>;
+          return CarrierRecommendationView(
+            currentLat: data['lat'] as double,
+            currentLng: data['lng'] as double,
+          );
         },
       ),
-      // 🚀 차주 복귀 추천 경로 추가
       GoRoute(
         path: '/carrier-recommendation',
+        builder: (context, state) => const /carrier-
+        ),
+      // 🚀 차주 복귀 추천 경로 추가
+      GoRoute(
+        path: '/report-list',
+        builder: (context, state) => const ReportListView(),
+      ),
+      GoRoute(
+        path: '/report-create',
         builder: (context, state) {
           final data = state.extra as Map<String, dynamic>;
           return CarrierRecommendationView(
