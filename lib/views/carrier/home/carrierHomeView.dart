@@ -25,7 +25,6 @@ class _CarrierHomeViewState extends ConsumerState<CarrierHomeView> {
   List<Widget> get _screens => [
     const OrderBoardView(),
     _buildDeliveryHistoryTab(),
-    const Center(child: Text("정산 내역")),
     const CarrierMyPageView(),
   ];
 
@@ -152,7 +151,7 @@ class _CarrierHomeViewState extends ConsumerState<CarrierHomeView> {
         elevation: 0,
         centerTitle: true,
         title: Text(
-          ["오더 보드", "내 운송", "정산 내역", "마이 페이지"][_selectedIndex],
+          ["오더 보드", "내 운송", "마이 페이지"][_selectedIndex],
           style: TextStyle(color: primaryNavy, fontWeight: FontWeight.bold),
         ),
       ),
@@ -174,7 +173,6 @@ class _CarrierHomeViewState extends ConsumerState<CarrierHomeView> {
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: "오더보드"),
           BottomNavigationBarItem(icon: Icon(Icons.local_shipping_outlined), label: "내 운송"),
-          BottomNavigationBarItem(icon: Icon(Icons.account_balance_wallet_outlined), label: "정산내역"),
           BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: "마이페이지"),
         ],
       ),
