@@ -50,52 +50,52 @@ class ApiService {
           print("🚨 [ApiService] 401 에러 감지: ${error.requestOptions.path}");
 
           // 2. 토큰 갱신 (한 번에 하나만 수행)
-          if (!_isRefreshing) {
-            _isRefreshing = true;
-            _refreshCompleter = Completer<void>();
-            
-            final bool refreshed = await _refreshToken();
-            
-            _isRefreshing = false;
-            _refreshCompleter?.complete();
-            
-            if (!refreshed) {
-              print("❌ [ApiService] 토큰 갱신 최종 실패");
-              await logout();
-              return handler.next(error);
-            }
-          } else {
-            print("⏳ [ApiService] 다른 요청이 갱신 중... 대기");
-            await _refreshCompleter?.future;
-          }
-
-          // 3. 갱신된 토큰으로 재시도
-          try {
-            final newToken = await _storage.read(key: 'access_token');
-            final options = error.requestOptions;
-            
-            // 헤더 업데이트 및 재시도 플래그 설정
-            options.headers['Authorization'] = 'Bearer $newToken';
-            options.extra['is_retry'] = true;
-
-            print("🔄 [ApiService] 새 토큰으로 재시도 시작: ${options.path}");
-            
-            // 기존 dio 인스턴스로 다시 요청 (인터셉터를 다시 타게 됨)
-            final response = await dio.request(
-              options.path,
-              data: options.data,
-              queryParameters: options.queryParameters,
-              options: Options(
-                method: options.method,
-                headers: options.headers,
-                extra: options.extra,
-              ),
-            );
-            return handler.resolve(response);
-          } catch (e) {
-            print("💀 [ApiService] 재시도 중 예외 발생: $e");
-            return handler.next(error);
-          }
+          // if (!_isRefreshing) {
+          //   _isRefreshing = true;
+          //   _refreshCompleter = Completer<void>();
+          //
+          //   final bool refreshed = await _refreshToken();
+          //
+          //   _isRefreshing = false;
+          //   _refreshCompleter?.complete();
+          //
+          //   if (!refreshed) {
+          //     print("❌ [ApiService] 토큰 갱신 최종 실패");
+          //     await logout();
+          //     return handler.next(error);
+          //   }
+          // } else {
+          //   print("⏳ [ApiService] 다른 요청이 갱신 중... 대기");
+          //   await _refreshCompleter?.future;
+          // }
+          //
+          // // 3. 갱신된 토큰으로 재시도
+          // try {
+          //   final newToken = await _storage.read(key: 'access_token');
+          //   final options = error.requestOptions;
+          //
+          //   // 헤더 업데이트 및 재시도 플래그 설정
+          //   options.headers['Authorization'] = 'Bearer $newToken';
+          //   options.extra['is_retry'] = true;
+          //
+          //   print("🔄 [ApiService] 새 토큰으로 재시도 시작: ${options.path}");
+          //
+          //   // 기존 dio 인스턴스로 다시 요청 (인터셉터를 다시 타게 됨)
+          //   final response = await dio.request(
+          //     options.path,
+          //     data: options.data,
+          //     queryParameters: options.queryParameters,
+          //     options: Options(
+          //       method: options.method,
+          //       headers: options.headers,
+          //       extra: options.extra,
+          //     ),
+          //   );
+          //   return handler.resolve(response);
+          // } catch (e) {
+          //   print("💀 [ApiService] 재시도 중 예외 발생: $e");
+          //   return handler.next(error);
+          // }
         },
       ),
     );
