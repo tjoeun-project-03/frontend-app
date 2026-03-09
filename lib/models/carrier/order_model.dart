@@ -53,13 +53,15 @@ class OrderResponse {
       status: status ?? this.status,
       created: created,
       price: price,
+      carrierId: carrierId,
+      shipperId: shipperId,
       departure: departure,
       arrival: arrival,
-      content: content,
       carType: carType,
-      weight: weight,
       consigneeName: consigneeName,
       consigneeContact: consigneeContact,
+      weight: weight,
+      content: content,
       clientNote: clientNote,
       distance: distance,
       duration: duration,
@@ -70,7 +72,7 @@ class OrderResponse {
     );
   }
 
-  // 🚀 누락되었던 Getter들 복구
+  // 🚀 상태 한글 변환 Getter
   String get statusText {
     final s = status.toUpperCase();
     if (s.contains('CREATED')) return '주문 생성';
@@ -82,6 +84,7 @@ class OrderResponse {
     return status;
   }
 
+  // 🚀 날짜 포맷팅 Getter
   String get formattedDate {
     try {
       if (created.isEmpty) return "날짜 정보 없음";
@@ -123,25 +126,5 @@ class OrderResponse {
       endLat: parseDouble(json['endLat']),
       endLng: parseDouble(json['endLng']),
     );
-  }
-
-  String get statusText {
-    switch (status) {
-      case 'CREATED': return '예약완료';
-      case 'PROCEEDING': return '운송중';
-      case 'COMPLETED': return '운송완료';
-      case 'CANCELLED': return '취소됨';
-      default: return status;
-    }
-  }
-
-  String get formattedDate {
-    try {
-      if (created.isEmpty) return "";
-      DateTime dt = DateTime.parse(created);
-      return "${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}";
-    } catch (e) {
-      return created;
-    }
   }
 }

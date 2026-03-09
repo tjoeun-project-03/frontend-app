@@ -25,6 +25,7 @@ class _CarrierHomeViewState extends ConsumerState<CarrierHomeView> {
     Future.microtask(() => ref.read(activeOrderProvider.notifier).syncWithServer());
   }
 
+  // 🚀 "정산 내역" 제거, 3개 탭으로 통일
   List<Widget> get _screens => [
     const OrderBoardView(),
     _buildDeliveryHistoryTab(),
@@ -34,9 +35,7 @@ class _CarrierHomeViewState extends ConsumerState<CarrierHomeView> {
   Widget _buildDeliveryHistoryTab() {
     final profile = ref.watch(carrierProfileProvider);
     
-    // 메모: '완료' 글자가 포함된 것(예약완료 등)이 아니라 정확히 'COMPLETED' 또는 '운송완료'인 것만 필터링
     final completedOrders = profile.allOrders.where((order) {
-      final status = order.status.toUpperCase();
       return order.statusText == '배송 완료';
     }).toList();
 
@@ -167,10 +166,10 @@ class _CarrierHomeViewState extends ConsumerState<CarrierHomeView> {
         elevation: 0,
         centerTitle: true,
         title: Text(
+          // 🚀 3개로 통일
           ["오더 보드", "내 운송", "마이 페이지"][_selectedIndex],
           style: TextStyle(color: primaryNavy, fontWeight: FontWeight.bold),
         ),
-        // 🚀 오더보드 탭일 때만 우측 상단에 복귀 추천 버튼 노출
         actions: _selectedIndex == 0 ? [
           TextButton.icon(
             onPressed: _navigateToRecommendation,
@@ -180,12 +179,11 @@ class _CarrierHomeViewState extends ConsumerState<CarrierHomeView> {
           const SizedBox(width: 8),
         ] : null,
       ),
-      body: IndexedStack(index: _selectedIndex, children: [
-        const OrderBoardView(),
-        const Center(child: Text("내 운송")),
-        const Center(child: Text("정산 내역")),
-        const CarrierMyPageView(),
-      ]),
+      body: IndexedStack(
+        index: _selectedIndex,
+        // 🚀 3개로 통일
+        children: _screens,
+      ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: (index) {
@@ -197,6 +195,7 @@ class _CarrierHomeViewState extends ConsumerState<CarrierHomeView> {
         type: BottomNavigationBarType.fixed,
         selectedItemColor: primaryNavy,
         unselectedItemColor: Colors.grey,
+        // 🚀 3개로 통일
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: "오더보드"),
           BottomNavigationBarItem(icon: Icon(Icons.local_shipping_outlined), label: "내 운송"),
@@ -206,14 +205,13 @@ class _CarrierHomeViewState extends ConsumerState<CarrierHomeView> {
     );
   }
 
-  // 🚀 현재 위치를 기반으로 추천 페이지 이동
   Future<void> _navigateToRecommendation() async {
     showDialog(context: context, barrierDismissible: false, builder: (_) => const Center(child: CircularProgressIndicator()));
     
     try {
       Position position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
       if (mounted) {
-        Navigator.pop(context); // 로딩 닫기
+        Navigator.pop(context);
         context.push('/carrier-recommendation', extra: {'lat': position.latitude, 'lng': position.longitude});
       }
     } catch (e) {
