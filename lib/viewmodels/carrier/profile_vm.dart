@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:jimline/services/common/api_service.dart';
 import '../../models/carrier/order_model.dart';
@@ -32,6 +33,38 @@ class CarrierProfileState {
     this.totalDistance = 0.0,
     this.allOrders = const [],
   });
+
+  CarrierProfileState copyWith({
+    String? userName,
+    String? car,
+    String? carType,
+    String? carNum,
+    double? rating,
+    int? reviewCount,
+    bool? isLoading,
+    int? totalIncome,
+    int? totalOrders,
+    double? completionRate,
+    int? avgTime,
+    double? totalDistance,
+    List<OrderResponse>? allOrders,
+  }) {
+    return CarrierProfileState(
+      userName: userName ?? this.userName,
+      car: car ?? this.car,
+      carType: carType ?? this.carType,
+      carNum: carNum ?? this.carNum,
+      rating: rating ?? this.rating,
+      reviewCount: reviewCount ?? this.reviewCount,
+      isLoading: isLoading ?? this.isLoading,
+      totalIncome: totalIncome ?? this.totalIncome,
+      totalOrders: totalOrders ?? this.totalOrders,
+      completionRate: completionRate ?? this.completionRate,
+      avgTime: avgTime ?? this.avgTime,
+      totalDistance: totalDistance ?? this.totalDistance,
+      allOrders: allOrders ?? this.allOrders,
+    );
+  }
 }
 
 class CarrierProfileViewModel extends StateNotifier<CarrierProfileState> {
@@ -40,6 +73,8 @@ class CarrierProfileViewModel extends StateNotifier<CarrierProfileState> {
 
   Future<void> fetchProfile() async {
     try {
+      state = state.copyWith(isLoading: true);
+
       final results = await Future.wait([
         _api.dio.get("/api/users/me"),
         _api.dio.get("/api/users/me/carrier"),
@@ -50,44 +85,35 @@ class CarrierProfileViewModel extends StateNotifier<CarrierProfileState> {
       final carrierData = results[1].data;
       final List<dynamic> ordersData = results[2].data;
 
-      // JSON -> OrderResponse 변환
+      // JSON -> OrderResponse 모델 변환
       final List<OrderResponse> orders = ordersData.map((e) => OrderResponse.fromJson(e)).toList();
 
       int incomeSum = 0;
       double distanceSum = 0;
       int completedCount = 0;
       int totalDuration = 0;
-      
-      final now = DateTime.now();
-      int thisMonthTotal = 0;
-      int thisMonthCompleted = 0;
 
       for (var order in orders) {
-        if (order.status == 'COMPLETED') {
+        // 메모: 상태값이 '배송 완료' 또는 'COMPLETED'인 경우를 체크합니다.
+        final String status = order.status.trim().toUpperCase();
+        final bool isCompleted = status == '배송 완료' || status == 'COMPLETED';
+
+        if (isCompleted) {
           incomeSum += order.price;
           distanceSum += order.distance;
           completedCount++;
           totalDuration += order.duration;
         }
-
-        if (order.created.isNotEmpty) {
-          try {
-            final createdAt = DateTime.parse(order.created);
-            if (createdAt.year == now.year && createdAt.month == now.month) {
-              thisMonthTotal++;
-              if (order.status == 'COMPLETED') thisMonthCompleted++;
-            }
-          } catch (_) {}
-        }
       }
 
-      double monthRate = thisMonthTotal > 0 
-          ? (thisMonthCompleted / thisMonthTotal) * 100 
+      // 메모: 전체 오더 수 대비 완료된 오더 수의 비율을 계산합니다. (요청 사항 반영)
+      double totalCompletionRate = orders.isNotEmpty 
+          ? (completedCount / orders.length) * 100 
           : 0.0;
       
       int avgDur = completedCount > 0 ? (totalDuration ~/ completedCount) : 0;
 
-      state = CarrierProfileState(
+      state = state.copyWith(
         userName: userData['userName'] ?? "이름 없음",
         car: carrierData['car'] ?? "차량 정보 없음",
         carType: carrierData['carType'] ?? "",
@@ -96,15 +122,17 @@ class CarrierProfileViewModel extends StateNotifier<CarrierProfileState> {
         reviewCount: carrierData['reviewCount'] ?? 0,
         totalIncome: incomeSum,
         totalOrders: completedCount,
-        completionRate: monthRate,
+        completionRate: totalCompletionRate,
         avgTime: avgDur,
         totalDistance: distanceSum,
-        allOrders: orders, // 리스트 저장
+        allOrders: orders,
         isLoading: false,
       );
+      print("메모: 통계 계산 완료 - 전체:${orders.length}, 완료:$completedCount, 비율:${totalCompletionRate.toStringAsFixed(1)}%");
+
     } catch (e) {
-      print("프로필 및 통계 조회 실패: $e");
-      state = CarrierProfileState(isLoading: false);
+      print("메모: 프로필 및 통계 조회 최종 실패 - $e");
+      state = state.copyWith(isLoading: false);
     }
   }
 
