@@ -4,13 +4,15 @@ class OrderResponse {
   final String status;
   final String created;
   final int price;
+  final String carrierId;
+  final String shipperId;
   final String departure;
   final String arrival;
-  final String content;
   final String carType;
-  final double weight;
   final String consigneeName;
   final String consigneeContact;
+  final double weight;
+  final String content;
   final String clientNote;
   final double distance;
   final int duration;
@@ -25,13 +27,15 @@ class OrderResponse {
     required this.status,
     required this.created,
     required this.price,
+    required this.carrierId,
+    required this.shipperId,
     required this.departure,
     required this.arrival,
-    required this.content,
     required this.carType,
-    required this.weight,
     required this.consigneeName,
     required this.consigneeContact,
+    required this.weight,
+    required this.content,
     required this.clientNote,
     required this.distance,
     required this.duration,
@@ -54,6 +58,8 @@ class OrderResponse {
       invoiceNo: json['invoiceNo'] ?? '',
       created: json['created'] ?? '',
       price: json['price'] ?? 0,
+      carrierId: json['carrierId']?.toString() ?? '',
+      shipperId: json['shipperId']?.toString() ?? '',
       departure: json['departure'] ?? '',
       arrival: json['arrival'] ?? '',
       content: json['content'] ?? '',
@@ -64,7 +70,6 @@ class OrderResponse {
       clientNote: json['clientNote'] ?? '',
       distance: (json['distance'] as num?)?.toDouble() ?? 0.0,
       duration: (json['duration'] as num?)?.toInt() ?? 0,
-      // 🚀 서버 필드명이 status일 수도 있고 currentStatus일 수도 있으므로 둘 다 확인
       status: (json['status'] ?? json['currentStatus'] ?? 'CREATED').toString().toUpperCase(),
       startLat: parseDouble(json['startLat']),
       startLng: parseDouble(json['startLng']),
@@ -73,7 +78,6 @@ class OrderResponse {
     );
   }
 
-  // 상태 한글 변환
   String get statusText {
     switch (status) {
       case 'CREATED': return '예약완료';
@@ -84,7 +88,6 @@ class OrderResponse {
     }
   }
 
-  // 날짜 포맷팅 (YYYY-MM-DD)
   String get formattedDate {
     try {
       if (created.isEmpty) return "";
