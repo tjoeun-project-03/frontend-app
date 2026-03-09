@@ -7,6 +7,7 @@ import '../views/auth/loginView.dart';
 import '../views/auth/roleSelectionView.dart';
 import '../views/auth/signupView.dart';
 import '../views/auth/licenseCameraView.dart';
+import '../views/carrier/mypage/carrierOrderHistoryView.dart';
 import '../views/shipper/shipperNavControllerView.dart';
 import '../views/shipper/home/shipperPaymentView.dart';
 import '../views/shipper/tracking/shipperEvaluationView.dart';
@@ -22,6 +23,7 @@ import '../views/shipper/tracking/shipperHistoryTrackingView.dart'; // 🚀 추�
 import '../models/carrier/order_model.dart';
 import '../views/common/reportListView.dart';
 import '../views/common/reportCreateView.dart';
+import '../views/shipper/tracking/shipper_order_list_view.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
