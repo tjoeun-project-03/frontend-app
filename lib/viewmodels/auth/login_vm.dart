@@ -4,7 +4,7 @@ import 'package:jimline/services/common/api_service.dart';
 class LoginState {
   final bool isLoading;
   final String? errorMessage;
-  final String? userRole; // 🚀 역할(Role) 필드 추가
+  final String? userRole;
 
   LoginState({this.isLoading = false, this.errorMessage, this.userRole});
 
@@ -35,13 +35,11 @@ class LoginViewModel extends StateNotifier<LoginState> {
         final data = response.data;
         final String role = data['role']?.toString() ?? "";
 
-        // 🔒 저장소에 토큰 저장
         final storage = _api.getStorage();
         await storage.write(key: 'access_token', value: data['accessToken']);
         await storage.write(key: 'refresh_token', value: data['refreshToken']);
         await storage.write(key: 'user_role', value: role);
 
-        // 🚀 상태에 역할 저장
         state = state.copyWith(isLoading: false, userRole: role);
         return role;
       } else {
@@ -51,6 +49,21 @@ class LoginViewModel extends StateNotifier<LoginState> {
     } catch (e) {
       state = state.copyWith(isLoading: false, errorMessage: "서버 연결에 실패했습니다.");
       return null;
+    }
+  }
+
+  // 🚀 로그아웃 기능 추가
+  Future<void> logout() async {
+    try {
+      final storage = _api.getStorage();
+      await storage.delete(key: 'access_token');
+      await storage.delete(key: 'refresh_token');
+      await storage.delete(key: 'user_role');
+      
+      // 🔒 상태 초기화
+      state = LoginState();
+    } catch (e) {
+      print("로그아웃 처리 중 에러: $e");
     }
   }
 }

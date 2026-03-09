@@ -19,7 +19,7 @@ class _ShipperHomeViewState extends State<ShipperHomeView> {
     ..loadFlutterAsset('assets/tmap.html');
 
   Timer? _debounce;
-  double _estimatedWeight = 11.0;
+  double _estimatedWeight = 5.0;
   String? _selectedCategory = "가전";
 
   int _serverPrice = 0;           
@@ -46,7 +46,7 @@ class _ShipperHomeViewState extends State<ShipperHomeView> {
       startLat = null; startLng = null;
       endLat = null; endLng = null;
       _selectedCategory = "가전";
-      _estimatedWeight = 11.0;
+      _estimatedWeight = 5.0;
       _serverPrice = 0;
       _baseCost = 0;
       _surchargeAmount = 0;
@@ -272,7 +272,7 @@ class _ShipperHomeViewState extends State<ShipperHomeView> {
         Text("예상 무게", style: TextStyle(fontWeight: FontWeight.bold, color: jimlineNavy)),
         Text("${_estimatedWeight.toStringAsFixed(1)} 톤", style: TextStyle(fontWeight: FontWeight.bold, color: jimlineNavy))
       ]),
-      Slider(value: _estimatedWeight, min: 0.5, max: 25.0, activeColor: jimlineNavy, onChanged: (val) => setState(() => _estimatedWeight = val))
+      Slider(value: _estimatedWeight, min: 0.5, max: 5.0, activeColor: jimlineNavy, onChanged: (val) => setState(() => _estimatedWeight = val))
     ]),
   );
 

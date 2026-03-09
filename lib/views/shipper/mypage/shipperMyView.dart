@@ -90,7 +90,7 @@ class ShipperMyView extends ConsumerWidget {
               _buildMenuSection("운송 관리", [
                 _buildMenuItem(
                   Icons.description_outlined, 
-                  "운송 예약 내역", 
+                  "이용 내역",
                   onTap: () => context.push('/shipper-reservation-list')
                 ),
                 _buildMenuItem(

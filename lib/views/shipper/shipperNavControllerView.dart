@@ -16,7 +16,7 @@ class _ShipperNavControllerState extends State<ShipperNavController> {
   int _selectedIndex = 0;
 
   // 원래 기획대로 3개의 타이틀 유지
-  final List<String> _titles = ["운송 예약", "이용 내역 및 운송 추적", "마이페이지"];
+  final List<String> _titles = ["운송 예약", "운송 관리", "마이페이지"];
 
   Widget _getSelectedPage(int index) {
     switch (index) {

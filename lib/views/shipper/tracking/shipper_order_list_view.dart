@@ -54,7 +54,6 @@ class ShipperOrderListView extends ConsumerWidget {
               children: [
                 _buildTabItem("대기중 ${summary["waiting"]}", state.selectedTabIndex == 0, () => viewModel.changeTab(0)),
                 _buildTabItem("배송중 ${summary["ing"]}", state.selectedTabIndex == 1, () => viewModel.changeTab(1)),
-                _buildTabItem("완료 ${summary["done"]}", state.selectedTabIndex == 2, () => viewModel.changeTab(2)),
               ],
             ),
           ),

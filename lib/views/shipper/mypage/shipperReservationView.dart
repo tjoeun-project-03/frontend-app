@@ -31,7 +31,7 @@ class _ShipperReservationViewState extends ConsumerState<ShipperReservationView>
       backgroundColor: bgGrey,
       appBar: AppBar(
         title: const Text(
-          "운송 예약 내역",
+          "이용 내역",
           style: TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.bold),
         ),
         backgroundColor: Colors.white,
