@@ -21,13 +21,20 @@ class _CarrierMyPageViewState extends ConsumerState<CarrierMyPageView> {
     Future.microtask(() => ref.read(carrierProfileProvider.notifier).fetchProfile());
   }
 
+  // 숫자에 콤마 추가하는 함수
+  String _formatPrice(int price) {
+    return price.toString().replaceAllMapped(
+      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+      (Match m) => '${m[1]},'
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final profile = ref.watch(carrierProfileProvider);
 
     if (profile.isLoading) return const Center(child: CircularProgressIndicator());
 
-    // 🚀 Scaffold를 제거하고 SingleChildScrollView로 감싸서 부모 Scaffold 안에 배치합니다.
     return Container(
       color: Colors.white,
       child: SingleChildScrollView(
@@ -35,29 +42,39 @@ class _CarrierMyPageViewState extends ConsumerState<CarrierMyPageView> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 1. 상단 프로필 카드 (이름, 차량정보 표시)
+            // 1. 상단 프로필 카드
             _buildProfileCard(profile),
             const SizedBox(height: 24),
 
-            // 2. 차량 정보 관리 메뉴
-            _buildMenuButton("차량 정보 관리", Icons.local_shipping),
+            // 2. 관리 메뉴 리스트
+            const Text("계정 및 차량 관리", style: TextStyle(color: Color(0xFF1A237E), fontSize: 14, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            _buildMenuItem(Icons.local_shipping_outlined, "차량 정보 관리", onTap: () {}),
+            
             const SizedBox(height: 32),
 
-            // 3. 누적 수익 현황 섹션
+            // 3. 누적 수익 현황 섹션 (실시간 계산값 반영)
             const Text("누적 수익 현황", style: TextStyle(color: Color(0xFF1A237E), fontSize: 16)),
             const SizedBox(height: 8),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text("₩12,450,000", style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
-                const Text("4.2%\n최근 6개월 기준", textAlign: TextAlign.right, style: TextStyle(color: Colors.green, fontSize: 12)),
+                Text("₩${_formatPrice(profile.totalIncome)}", 
+                    style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
+                const Text("실시간 집계", textAlign: TextAlign.right, 
+                    style: TextStyle(color: Colors.green, fontSize: 12)),
               ],
             ),
             const SizedBox(height: 12),
-            Center(child: TextButton(onPressed: () {}, child: const Text("전체 내역 상세 보기 →", style: TextStyle(color: Color(0xFF1A237E))))),
+            Center(
+              child: TextButton(
+                onPressed: () => context.push('/carrier-order-history'), 
+                child: const Text("전체 내역 상세 보기 →", style: TextStyle(color: Color(0xFF1A237E)))
+              )
+            ),
             const SizedBox(height: 24),
 
-            // 4. 운행 통계 그리드
+            // 4. 운행 통계 그리드 (실시간 계산값 반영)
             const Text("운행 통계", style: TextStyle(color: Color(0xFF1A237E), fontSize: 20, fontWeight: FontWeight.bold)),
             const SizedBox(height: 16),
             GridView.count(
@@ -68,19 +85,15 @@ class _CarrierMyPageViewState extends ConsumerState<CarrierMyPageView> {
               crossAxisSpacing: 12,
               childAspectRatio: 1.4,
               children: [
-                _buildStatBox("총 배송건수", "124 건", Icons.local_shipping, Colors.blue),
-                _buildStatBox("이번달 완료율", "98 %", Icons.check_circle, Colors.green),
-                _buildStatBox("평균 상하차 시간", "35 분", Icons.access_time, Colors.orange),
-                _buildStatBox("총누적주행", "4,280 km", Icons.sync, Colors.purple),
+                _buildStatBox("총 배송건수", "${profile.totalOrders} 건", Icons.local_shipping, Colors.blue),
+                _buildStatBox("이번달 완료율", "${profile.completionRate.toStringAsFixed(1)} %", Icons.check_circle, Colors.green),
+                _buildStatBox("평균 소요 시간", "${profile.avgTime} 분", Icons.access_time, Colors.orange),
+                _buildStatBox("총누적주행", "${profile.totalDistance.toStringAsFixed(1)} km", Icons.sync, Colors.purple),
               ],
             ),
-            const SizedBox(height: 24),
-
-            // 5. 불량 화주 신고 영역
-            _buildReportButton(),
             const SizedBox(height: 40),
 
-            // 6. 로그아웃 버튼 (뷰모델 연결)
+            // 6. 로그아웃 버튼
             Center(
               child: TextButton(
                 onPressed: () async {
@@ -113,17 +126,7 @@ class _CarrierMyPageViewState extends ConsumerState<CarrierMyPageView> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Text(profile.userName, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      // decoration: BoxDecoration(color: const Color(0xFFE8EAF6), borderRadius: BorderRadius.circular(4)),
-                      // child: const Text("베테랑", style: TextStyle(color: Color(0xFF3F51B5), fontSize: 11, fontWeight: FontWeight.bold)),
-                    ),
-                  ],
-                ),
+                Text(profile.userName, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 4),
                 Text("${profile.car} ${profile.carType}", style: const TextStyle(color: Colors.black54, fontSize: 14)),
                 Text(profile.carNum, style: const TextStyle(color: Colors.black54, fontSize: 14)),
@@ -143,15 +146,15 @@ class _CarrierMyPageViewState extends ConsumerState<CarrierMyPageView> {
     );
   }
 
-  Widget _buildMenuButton(String title, IconData icon) => Container(
-    padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(border: Border.all(color: Colors.black12), borderRadius: BorderRadius.circular(12)),
-    child: Row(children: [
-      Icon(icon, color: primaryNavy), const SizedBox(width: 12),
-      Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-      const Spacer(), const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
-    ]),
-  );
+  Widget _buildMenuItem(IconData icon, String title, {VoidCallback? onTap}) {
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: Icon(icon, color: primaryNavy, size: 22),
+      title: Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
+      trailing: const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey),
+      onTap: onTap,
+    );
+  }
 
   Widget _buildStatBox(String label, String value, IconData icon, Color iconColor) => Container(
     padding: const EdgeInsets.all(16),
@@ -165,18 +168,5 @@ class _CarrierMyPageViewState extends ConsumerState<CarrierMyPageView> {
         Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
       ],
     ),
-  );
-
-  Widget _buildReportButton() => Container(
-    padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(color: const Color(0xFFFDECEA), borderRadius: BorderRadius.circular(12)),
-    child: Row(children: [
-      const Icon(Icons.error_outline, color: Colors.red), const SizedBox(width: 12),
-      const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text("불량 화주 신고", style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
-        Text("매너 없는 화주를 리포트해주세요", style: TextStyle(color: Colors.grey, fontSize: 12)),
-      ]),
-      const Spacer(), const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.red),
-    ]),
   );
 }

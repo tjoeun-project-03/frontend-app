@@ -19,6 +19,7 @@ import '../views/carrier/home/carrierHomeView.dart';
 import '../views/carrier/home/orderDetailView.dart';
 import '../views/shipper/tracking/shipper_order_list_view.dart';
 import '../models/carrier/order_model.dart';
+import '../views/carrier/mypage/carrierOrderHistoryView.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -65,6 +66,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         },
       ),
       GoRoute(
+        path: '/carrier-order-history',
+        builder: (context, state) => const CarrierOrderHistoryView(),
+      ),
+      GoRoute(
           path: '/shipper-payment',
           builder: (context, state) {
             final data = state.extra as Map<String, dynamic>;
@@ -90,7 +95,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/shipper-history',
-        builder: (context, state) => const ShipperOrderListView(),
+        builder: (context, state) {
+          final orderId = state.extra as int;
+          return ShipperHistoryTrackingView(orderId: orderId);
+        },
       ),
       GoRoute(
         path: '/shipper-notice',
