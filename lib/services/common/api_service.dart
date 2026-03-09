@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
@@ -5,8 +6,10 @@ class ApiService {
   static final ApiService _instance = ApiService._internal();
   late Dio dio;
   final _storage = const FlutterSecureStorage();
+  
+  bool _isRefreshing = false;
+  Completer<void>? _refreshCompleter;
 
-  // 싱글톤 패턴
   factory ApiService() {
     return _instance;
   }
@@ -21,13 +24,10 @@ class ApiService {
         baseUrl: "http://10.0.2.2:8080",
         connectTimeout: const Duration(seconds: 10),
         receiveTimeout: const Duration(seconds: 10),
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: {'Content-Type': 'application/json'},
       ),
     );
 
-    // 🚀 인터셉터 추가
     dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
@@ -38,91 +38,110 @@ class ApiService {
           return handler.next(options);
         },
         onError: (error, handler) async {
-          // ⚠️ 401 에러 발생 시 로그
-          if (error.response?.statusCode == 401) {
-            print("🚨 [401 Unauthorized] 토큰 만료 감지. 갱신을 시도합니다...");
-
-            final bool refreshed = await _refreshToken();
-
-            if (refreshed) {
-              print("✅ [Auth] 토큰 갱신 성공! 원래 요청을 재시도합니다: ${error.requestOptions.path}");
-              String? newToken = await _storage.read(key: 'access_token');
-              error.requestOptions.headers['Authorization'] = 'Bearer $newToken';
-
-              // 재시도 시에도 dio 인스턴스를 사용하여 인터셉터가 적용되도록 함
-              return handler.resolve(await dio.fetch(error.requestOptions));
-            } else {
-              print("❌ [Auth] 토큰 갱신 실패. 로그아웃 처리합니다.");
+          // 1. 이미 재시도한 요청이거나 401이 아니면 통과
+          if (error.response?.statusCode != 401 || error.requestOptions.extra['is_retry'] == true) {
+            if (error.response?.statusCode == 401) {
+              print("🚫 [ApiService] 재시도 실패 또는 루프 차단. 로그아웃 처리.");
               await logout();
             }
+            return handler.next(error);
           }
-          return handler.next(error);
+
+          print("🚨 [ApiService] 401 에러 감지: ${error.requestOptions.path}");
+
+          // 2. 토큰 갱신 (한 번에 하나만 수행)
+          if (!_isRefreshing) {
+            _isRefreshing = true;
+            _refreshCompleter = Completer<void>();
+            
+            final bool refreshed = await _refreshToken();
+            
+            _isRefreshing = false;
+            _refreshCompleter?.complete();
+            
+            if (!refreshed) {
+              print("❌ [ApiService] 토큰 갱신 최종 실패");
+              await logout();
+              return handler.next(error);
+            }
+          } else {
+            print("⏳ [ApiService] 다른 요청이 갱신 중... 대기");
+            await _refreshCompleter?.future;
+          }
+
+          // 3. 갱신된 토큰으로 재시도
+          try {
+            final newToken = await _storage.read(key: 'access_token');
+            final options = error.requestOptions;
+            
+            // 헤더 업데이트 및 재시도 플래그 설정
+            options.headers['Authorization'] = 'Bearer $newToken';
+            options.extra['is_retry'] = true;
+
+            print("🔄 [ApiService] 새 토큰으로 재시도 시작: ${options.path}");
+            
+            // 기존 dio 인스턴스로 다시 요청 (인터셉터를 다시 타게 됨)
+            final response = await dio.request(
+              options.path,
+              data: options.data,
+              queryParameters: options.queryParameters,
+              options: Options(
+                method: options.method,
+                headers: options.headers,
+                extra: options.extra,
+              ),
+            );
+            return handler.resolve(response);
+          } catch (e) {
+            print("💀 [ApiService] 재시도 중 예외 발생: $e");
+            return handler.next(error);
+          }
         },
       ),
     );
   }
 
-  // 🚀 토큰 갱신
   Future<bool> _refreshToken() async {
     try {
       String? refreshToken = await _storage.read(key: 'refresh_token');
-      print("🔍 [Refresh] 저장된 리프레시 토큰 읽기 완료");
+      if (refreshToken == null) return false;
 
-      if (refreshToken == null) {
-        print("⚠️ [Refresh] 저장된 리프레시 토큰이 없습니다.");
-        return false;
-      }
-
-      final refreshDio = Dio(BaseOptions(
-        baseUrl: "http://10.0.2.2:8080",
-        contentType: Headers.textPlainContentType, // 서버 @RequestBody String에 맞춤
-      ));
-
-      print("📡 [Refresh] 서버에 재발급 요청 중...");
+      // 갱신 전용 별도 Dio (인터셉터 무한 루프 방지)
+      final refreshDio = Dio(BaseOptions(baseUrl: "http://10.0.2.2:8080"));
       final response = await refreshDio.post(
         "/api/auth/refresh",
         data: refreshToken,
+        options: Options(contentType: Headers.textPlainContentType),
       );
 
       if (response.statusCode == 200) {
         final data = response.data;
-        // 서버 응답 필드명이 'accessToken'인지 확인하세요.
-        await _storage.write(key: 'access_token', value: data['accessToken']);
-        if (data['refreshToken'] != null) {
-          await _storage.write(key: 'refresh_token', value: data['refreshToken']);
-          print("💾 [Refresh] 새로운 리프레시 토큰 저장 완료");
+        final newAccess = data['accessToken'] ?? data['token'];
+        final newRefresh = data['refreshToken'];
+
+        if (newAccess != null) {
+          await _storage.write(key: 'access_token', value: newAccess);
+          if (newRefresh != null) {
+            await _storage.write(key: 'refresh_token', value: newRefresh);
+          }
+          print("✨ [ApiService] 토큰 갱신 성공");
+          return true;
         }
-
-        print("✨ [Refresh] 엑세스 토큰 갱신 완료!");
-        return true;
       }
-
-      print("❓ [Refresh] 서버 응답이 200이 아님: ${response.statusCode}");
       return false;
     } catch (e) {
-      // 400 에러 발생 시 로그를 통해 서버의 거절 이유를 확인합니다.
-      if (e is DioException) {
-        print("❌ 토큰 갱신 실패 응답: ${e.response?.data}");
-      }
+      print("❌ [ApiService] 리프레시 요청 에러: $e");
       return false;
     }
   }
 
-  // 🚀 로그아웃 처리
   Future<void> logout() async {
     await _storage.delete(key: 'access_token');
     await _storage.delete(key: 'refresh_token');
     await _storage.delete(key: 'user_role');
-    // 필요시 GoRouter로 로그인 화면으로 이동하도록 처리
+    print("🚩 [ApiService] 세션 종료");
   }
 
-  // 🚀 Storage 접근 (토큰 저장용)
-  FlutterSecureStorage getStorage() {
-    return _storage;
-  }
-
-  // 🚀 Dio 인스턴스 반환
-  static Dio getDio() {
-    return ApiService().dio;
-  }
+  FlutterSecureStorage getStorage() => _storage;
+  static Dio getDio() => ApiService().dio;
 }
