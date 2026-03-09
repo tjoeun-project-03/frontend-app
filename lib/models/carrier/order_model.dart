@@ -1,4 +1,3 @@
-// lib/models/carrier/order_model.dart
 class OrderResponse {
   final int orderId;
   final String invoiceNo;
@@ -15,6 +14,12 @@ class OrderResponse {
   final String clientNote;
   final double distance;
   final int duration;
+  final String status; // 현재 상태
+  final String? invoiceNo;
+  final double? startLat;
+  final double? startLng;
+  final double? endLat;
+  final double? endLng;
 
   OrderResponse({
     required this.orderId,
@@ -32,9 +37,22 @@ class OrderResponse {
     required this.clientNote,
     required this.distance,
     required this.duration,
+    required this.status,
+    this.invoiceNo,
+    this.startLat,
+    this.startLng,
+    this.endLat,
+    this.endLng,
   });
 
   factory OrderResponse.fromJson(Map<String, dynamic> json) {
+    double? parseDouble(dynamic value) {
+      if (value == null) return null;
+      if (value is num) return value.toDouble();
+      if (value is String) return double.tryParse(value);
+      return null;
+    }
+
     return OrderResponse(
       orderId: json['orderId'] ?? 0,
       invoiceNo: json['invoiceNo'] ?? '',
@@ -45,12 +63,22 @@ class OrderResponse {
       arrival: json['arrival'] ?? '',
       content: json['content'] ?? '',
       carType: json['carType'] ?? '정보 없음',
+      price: json['price'] ?? 0,
+      created: json['created'] ?? '',
+      distance: parseDouble(json['distance']) ?? 0.0,
       weight: (json['weight'] as num?)?.toDouble() ?? 0.0,
       consigneeName: json['consigneeName'] ?? '',
       consigneeContact: json['consigneeContact'] ?? '',
       clientNote: json['clientNote'] ?? '',
       distance: (json['distance'] as num?)?.toDouble() ?? 0.0,
       duration: (json['duration'] as num?)?.toInt() ?? 0,
+      // 🚀 서버 필드명이 status일 수도 있고 currentStatus일 수도 있으므로 둘 다 확인
+      status: (json['status'] ?? json['currentStatus'] ?? 'CREATED').toString().toUpperCase(),
+      invoiceNo: json['invoiceNo'],
+      startLat: parseDouble(json['startLat']),
+      startLng: parseDouble(json['startLng']),
+      endLat: parseDouble(json['endLat']),
+      endLng: parseDouble(json['endLng']),
     );
   }
 

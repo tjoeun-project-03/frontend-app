@@ -10,21 +10,23 @@ import '../views/auth/licenseCameraView.dart';
 import '../views/shipper/shipperNavControllerView.dart';
 import '../views/shipper/home/shipperPaymentView.dart';
 import '../views/shipper/tracking/shipperEvaluationView.dart';
-import '../views/shipper/tracking/shipperHistoryTrackingView.dart';
 import '../views/shipper/mypage/shipperNoticeView.dart';
 import '../views/shipper/mypage/shipperInquiryView.dart';
 import '../views/shipper/mypage/shipperReservationView.dart';
 import '../views/shipper/mypage/shipperFavoriteAddressView.dart';
 import '../views/shipper/mypage/shipperFaqView.dart';
 import '../views/carrier/home/carrierHomeView.dart';
+import '../views/carrier/home/orderDetailView.dart';
+import '../views/shipper/tracking/shipper_order_list_view.dart';
+import '../models/carrier/order_model.dart';
 import '../views/carrier/mypage/carrierOrderHistoryView.dart';
 import '../views/common/reportListView.dart';
 import '../views/common/reportCreateView.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
-    navigatorKey: navigatorKey, // 라우터에 전역 키를 심어줌
-    initialLocation: '/start', // 앱 실행 시 첫 화면
+    navigatorKey: navigatorKey,
+    initialLocation: '/start',
     routes: [
       GoRoute(
         path: '/start',
@@ -56,6 +58,14 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
           path: '/carrier-home',
           builder: (context, state) => const CarrierHomeView(),
+      ),
+      // 🚀 차주 오더 상세 페이지 추가
+      GoRoute(
+        path: '/carrier-order-detail',
+        builder: (context, state) {
+          final order = state.extra as OrderResponse;
+          return OrderDetailView(order: order);
+        },
       ),
       GoRoute(
         path: '/carrier-order-history',
