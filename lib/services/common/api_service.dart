@@ -39,23 +39,23 @@ class ApiService {
         },
         onError: (error, handler) async {
           // ⚠️ 401 에러 발생 시 로그
-          if (error.response?.statusCode == 401) {
-            print("🚨 [401 Unauthorized] 토큰 만료 감지. 갱신을 시도합니다...");
-
-            final bool refreshed = await _refreshToken();
-
-            if (refreshed) {
-              print("✅ [Auth] 토큰 갱신 성공! 원래 요청을 재시도합니다: ${error.requestOptions.path}");
-              String? newToken = await _storage.read(key: 'access_token');
-              error.requestOptions.headers['Authorization'] = 'Bearer $newToken';
-
-              // 재시도 시에도 dio 인스턴스를 사용하여 인터셉터가 적용되도록 함
-              return handler.resolve(await dio.fetch(error.requestOptions));
-            } else {
-              print("❌ [Auth] 토큰 갱신 실패. 로그아웃 처리합니다.");
-              await logout();
-            }
-          }
+          // if (error.response?.statusCode == 401) {
+          //   print("🚨 [401 Unauthorized] 토큰 만료 감지. 갱신을 시도합니다...");
+          //
+          //   final bool refreshed = await _refreshToken();
+          //
+          //   if (refreshed) {
+          //     print("✅ [Auth] 토큰 갱신 성공! 원래 요청을 재시도합니다: ${error.requestOptions.path}");
+          //     String? newToken = await _storage.read(key: 'access_token');
+          //     error.requestOptions.headers['Authorization'] = 'Bearer $newToken';
+          //
+          //     // 재시도 시에도 dio 인스턴스를 사용하여 인터셉터가 적용되도록 함
+          //     return handler.resolve(await dio.fetch(error.requestOptions));
+          //   } else {
+          //     print("❌ [Auth] 토큰 갱신 실패. 로그아웃 처리합니다.");
+          //     await logout();
+          //   }
+          // }
           return handler.next(error);
         },
       ),

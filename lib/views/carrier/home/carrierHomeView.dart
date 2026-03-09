@@ -14,10 +14,9 @@ class _CarrierHomeViewState extends ConsumerState<CarrierHomeView> {
   int _selectedIndex = 0;
   final Color primaryNavy = const Color(0xFF1A2B88);
 
-  // 화면 리스트를 getter로 변경하여 ref에 접근 가능하게 함
   List<Widget> get _screens => [
     const OrderBoardView(),
-    _buildDeliveryTab(), // 🚀 수정된 내 운송 탭
+    _buildDeliveryTab(),
     const Center(child: Text("정산 내역")),
     const CarrierMyPageView(),
   ];
@@ -25,12 +24,13 @@ class _CarrierHomeViewState extends ConsumerState<CarrierHomeView> {
   Widget _buildDeliveryTab() {
     final isTracking = ref.watch(carrierTrackingProvider);
     
-    return Center(
+    return SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.all(24.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            const SizedBox(height: 40),
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
@@ -67,7 +67,6 @@ class _CarrierHomeViewState extends ConsumerState<CarrierHomeView> {
                   if (isTracking) {
                     ref.read(carrierTrackingProvider.notifier).stopTracking();
                   } else {
-                    // 테스트용 orderId 62 (로그에서 확인된 ID)
                     ref.read(carrierTrackingProvider.notifier).startTracking(62);
                   }
                 },

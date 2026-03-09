@@ -18,6 +18,8 @@ import '../views/shipper/mypage/shipperFavoriteAddressView.dart';
 import '../views/shipper/mypage/shipperFaqView.dart';
 import '../views/carrier/home/carrierHomeView.dart';
 import '../views/carrier/mypage/carrierOrderHistoryView.dart';
+import '../views/common/reportListView.dart';
+import '../views/common/reportCreateView.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -58,6 +60,17 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/carrier-order-history',
         builder: (context, state) => const CarrierOrderHistoryView(),
+      ),
+      GoRoute(
+        path: '/report-list',
+        builder: (context, state) => const ReportListView(),
+      ),
+      GoRoute(
+        path: '/report-create',
+        builder: (context, state) {
+          final orderId = state.extra as int;
+          return ReportCreateView(orderId: orderId);
+        },
       ),
       GoRoute(
           path: '/shipper-payment',
