@@ -83,7 +83,7 @@ class _CarrierHomeViewState extends ConsumerState<CarrierHomeView> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text("Order ID: ${order.orderId}", 
+              Text("송장번호: ${order.invoiceNo}",
                 style: TextStyle(fontWeight: FontWeight.bold, color: primaryNavy, fontSize: 14)),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -97,7 +97,6 @@ class _CarrierHomeViewState extends ConsumerState<CarrierHomeView> {
             ],
           ),
           const Divider(height: 20),
-          _buildInfoRow("송장번호", order.invoiceNo),
           _buildInfoRow("화주 ID", order.shipperId),
           _buildInfoRow("차주 ID", order.carrierId),
           _buildInfoRow("결제 금액", "${_formatPrice(order.price)}원"),
