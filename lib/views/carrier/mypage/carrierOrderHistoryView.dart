@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../viewmodels/carrier/profile_vm.dart';
-import '../../../models/carrier/order_model.dart';
 
 class CarrierOrderHistoryView extends ConsumerWidget {
   const CarrierOrderHistoryView({super.key});
