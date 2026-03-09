@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart'; // 🚀 임포트 추가
 import '../../../viewmodels/shipper/order_list_vm.dart';
 import './shipperHistoryTrackingView.dart';
 
@@ -16,29 +17,33 @@ class ShipperOrderListView extends ConsumerWidget {
     const Color bgGrey = Color(0xFFF5F5F5);
     const Color textGrey = Color(0xFF9E9E9E);
 
-    // --- 🚀 백엔드 OrderStatus Enum 기준으로 필터링 로직 수정 ---
+    // --- 🚀 필터링 로직 보강 (Enum명과 한글명 모두 대응) ---
     final filteredOrders = state.orders.where((order) {
-      final status = order.currentStatus?.toUpperCase() ?? '';
+      final status = (order.currentStatus ?? '').toUpperCase().trim();
 
       if (state.selectedTabIndex == 0) {
-        // 1. 배차대기 (주문 생성 상태)
-        return status == 'CREATED';
+        // 1. 배차대기
+        return status == 'CREATED' || status == '주문 생성' || status == '주문생성';
       } 
       else if (state.selectedTabIndex == 1) {
-        // 2. 배송중 (배차수락, 출발, 도착 상태 모두 포함)
-        return ['ACCEPTED', 'DEPARTED', 'ARRIVED'].contains(status);
+        // 2. 배송중 (중간 단계 모두 포함)
+        return ['ACCEPTED', 'DEPARTED', 'ARRIVED', 'PICKUP', '배차 완료', '배차완료', '출발', '도착', '상차 완료', '상차완료']
+            .contains(status);
       } 
       else if (state.selectedTabIndex == 2) {
         // 3. 완료/취소
-        return ['COMPLETED', 'CANCELED'].contains(status);
+        return ['COMPLETED', 'CANCELED', 'CANCELLED', '배송 완료', '배송완료', '취소됨', '취소'].contains(status);
       }
-      return true; // 전체 (현재는 사용되지 않음)
+      return true;
     }).toList();
 
     if (state.isLoading) return const Center(child: CircularProgressIndicator(color: jimlineNavy));
+    
     final summary = state.summary;
+
     return Column(
       children: [
+        // 탭 바 영역
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
           child: Container(
@@ -47,9 +52,9 @@ class ShipperOrderListView extends ConsumerWidget {
             decoration: BoxDecoration(color: jimlineNavy, borderRadius: BorderRadius.circular(8)),
             child: Row(
               children: [
-                _buildTabItem("대기중 ${summary["waiting"].toString()}", state.selectedTabIndex == 0, () => viewModel.changeTab(0)),
-                _buildTabItem("배송중 ${summary["ing"].toString()}", state.selectedTabIndex == 1, () => viewModel.changeTab(1)),
-                _buildTabItem("완료 ${summary["done"].toString()}", state.selectedTabIndex == 2, () => viewModel.changeTab(2)),
+                _buildTabItem("대기중 ${summary["waiting"]}", state.selectedTabIndex == 0, () => viewModel.changeTab(0)),
+                _buildTabItem("배송중 ${summary["ing"]}", state.selectedTabIndex == 1, () => viewModel.changeTab(1)),
+                _buildTabItem("완료 ${summary["done"]}", state.selectedTabIndex == 2, () => viewModel.changeTab(2)),
               ],
             ),
           ),
@@ -59,15 +64,20 @@ class ShipperOrderListView extends ConsumerWidget {
           child: RefreshIndicator(
             onRefresh: () => viewModel.fetchMyOrders(),
             child: filteredOrders.isEmpty
-                ? const Center(child: Text("내역이 없습니다."))
+                ? ListView( // Empty state에서도 스크롤 가능하게 하여 pull-to-refresh 유지
+                    children: const [
+                      SizedBox(height: 100),
+                      Center(child: Text("해당하는 내역이 없습니다.", style: TextStyle(color: Colors.grey))),
+                    ],
+                  )
                 : ListView.builder(
-              itemCount: filteredOrders.length,
-              padding: const EdgeInsets.all(16),
-              itemBuilder: (context, index) {
-                final order = filteredOrders[index];
-                return _buildOrderCard(context, order, jimlineNavy, borderGrey, bgGrey, textGrey);
-              },
-            ),
+                    itemCount: filteredOrders.length,
+                    padding: const EdgeInsets.all(16),
+                    itemBuilder: (context, index) {
+                      final order = filteredOrders[index];
+                      return _buildOrderCard(context, order, jimlineNavy, borderGrey, bgGrey, textGrey);
+                    },
+                  ),
           ),
         ),
       ],
@@ -90,6 +100,7 @@ class ShipperOrderListView extends ConsumerWidget {
             style: TextStyle(
               color: isSelected ? const Color(0xFF1A2B88) : Colors.white,
               fontWeight: FontWeight.bold,
+              fontSize: 13,
             ),
           ),
         ),
@@ -97,74 +108,78 @@ class ShipperOrderListView extends ConsumerWidget {
     );
   }
 
-  Widget _buildOrderCard(BuildContext context, order, Color navy, Color bGrey, Color bgGrey, Color tGrey) {
+  Widget _buildOrderCard(BuildContext context, dynamic order, Color navy, Color bGrey, Color bgGrey, Color tGrey) {
     return GestureDetector(
       onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => ShipperHistoryTrackingView(orderId: order.orderId!)),
-        );
+        // 상세 추적 페이지로 이동
+        context.push('/shipper-tracking/${order.orderId}');
       },
       child: Container(
-        margin: const EdgeInsets.only(bottom: 20),
+        margin: const EdgeInsets.only(bottom: 16),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(color: bGrey),
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))],
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(order.currentStatus ?? "상태 미확인", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-                  const SizedBox(height: 4),
-                  Text("출발지: ${order.departure ?? "-"}\n도착지: ${order.arrival ?? "-"}",
-                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: navy)),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      const CircleAvatar(
-                        radius: 18,
-                        backgroundColor: Color(0xFFEEEEEE),
-                        child: Icon(Icons.person, color: Color(0xFF9E9E9E), size: 20),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                order.carrier ?? "배차 대기 중",
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                              )
-                            ],
-                          )
-                      ),
-                      SizedBox(
-                        height: 32,
-                        width: 80,
-                        child: ElevatedButton(
-                          onPressed: () {},
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: navy,
-                            foregroundColor: Colors.white,
-                            elevation: 0,
-                            padding: EdgeInsets.zero,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-                          ),
-                          child: const Text("위치 보기", style: TextStyle(fontSize: 12)),
-                        ),
-                      ),
-                    ],
+                  Text(
+                    order.currentStatus ?? "상태 미확인", 
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: navy)
                   ),
+                  const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey),
                 ],
               ),
-            ),
-          ],
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  const Icon(Icons.circle, size: 8, color: Colors.blue),
+                  const SizedBox(width: 12),
+                  Expanded(child: Text(order.departure ?? "-", style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500))),
+                ],
+              ),
+              const Padding(
+                padding: EdgeInsets.only(left: 3, top: 4, bottom: 4),
+                child: Icon(Icons.more_vert, size: 12, color: Colors.grey),
+              ),
+              Row(
+                children: [
+                  const Icon(Icons.location_on, size: 10, color: Colors.red),
+                  const SizedBox(width: 12),
+                  Expanded(child: Text(order.arrival ?? "-", style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500))),
+                ],
+              ),
+              const Divider(height: 32),
+              Row(
+                children: [
+                  const CircleAvatar(
+                    radius: 16,
+                    backgroundColor: Color(0xFFF5F5F5),
+                    child: Icon(Icons.person, color: Colors.grey, size: 18),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      order.carrier ?? "배차 대기 중",
+                      style: const TextStyle(fontSize: 14, color: Colors.black87),
+                    ),
+                  ),
+                  if (order.carrier != null)
+                    TextButton(
+                      onPressed: () => context.push('/shipper-tracking/${order.orderId}'),
+                      child: const Text("실시간 위치", style: TextStyle(color: Color(0xFF1A2B88), fontWeight: FontWeight.bold)),
+                    ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
