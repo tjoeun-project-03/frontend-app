@@ -17,7 +17,7 @@ class _CarrierMyPageViewState extends ConsumerState<CarrierMyPageView> {
   @override
   void initState() {
     super.initState();
-    // 화면 로드 시 프로필 정보 업데이트
+    // 메모: 화면 로드 시 프로필 정보 업데이트
     Future.microtask(() => ref.read(carrierProfileProvider.notifier).fetchProfile());
   }
 
@@ -36,7 +36,7 @@ class _CarrierMyPageViewState extends ConsumerState<CarrierMyPageView> {
     if (profile.isLoading) return const Center(child: CircularProgressIndicator());
 
     return Container(
-      color: Colors.white,
+      color: const Color(0xFFF8F9FA),
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
         child: Column(
@@ -49,11 +49,20 @@ class _CarrierMyPageViewState extends ConsumerState<CarrierMyPageView> {
             // 2. 관리 메뉴 리스트
             const Text("계정 및 차량 관리", style: TextStyle(color: Color(0xFF1A237E), fontSize: 14, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
-            _buildMenuItem(Icons.local_shipping_outlined, "차량 정보 관리", onTap: () {}),
+            Container(
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
+              child: Column(
+                children: [
+                  _buildMenuItem(Icons.local_shipping_outlined, "차량 정보 관리", onTap: () {}),
+                  const Divider(height: 1, indent: 16, endIndent: 16),
+                  _buildMenuItem(Icons.report_problem_outlined, "내 신고 리스트", onTap: () => context.push('/report-list')),
+                ],
+              ),
+            ),
             
             const SizedBox(height: 32),
 
-            // 3. 누적 수익 현황 섹션 (실시간 계산값 반영)
+            // 3. 누적 수익 현황 섹션
             const Text("누적 수익 현황", style: TextStyle(color: Color(0xFF1A237E), fontSize: 16)),
             const SizedBox(height: 8),
             Row(
@@ -67,7 +76,7 @@ class _CarrierMyPageViewState extends ConsumerState<CarrierMyPageView> {
             ),
             const SizedBox(height: 32),
 
-            // 4. 운행 통계 그리드 (실시간 계산값 반영)
+            // 4. 운행 통계 그리드
             const Text("운행 통계", style: TextStyle(color: Color(0xFF1A237E), fontSize: 20, fontWeight: FontWeight.bold)),
             const SizedBox(height: 16),
             GridView.count(
@@ -84,6 +93,25 @@ class _CarrierMyPageViewState extends ConsumerState<CarrierMyPageView> {
                 _buildStatBox("총누적주행", "${profile.totalDistance.toStringAsFixed(1)} km", Icons.sync, Colors.purple),
               ],
             ),
+            
+            const SizedBox(height: 32),
+
+            // 5. 고객 지원 섹션 추가
+            const Text("고객 지원", style: TextStyle(color: Color(0xFF1A237E), fontSize: 14, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            Container(
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
+              child: Column(
+                children: [
+                  _buildMenuItem(Icons.campaign_outlined, "공지사항", onTap: () => context.push('/shipper-notice')),
+                  const Divider(height: 1, indent: 16, endIndent: 16),
+                  _buildMenuItem(Icons.headset_mic_outlined, "1:1 문의", onTap: () => context.push('/shipper-inquiry')),
+                  const Divider(height: 1, indent: 16, endIndent: 16),
+                  _buildMenuItem(Icons.help_outline, "자주 묻는 질문", onTap: () => context.push('/shipper-faq')),
+                ],
+              ),
+            ),
+
             const SizedBox(height: 40),
 
             // 6. 로그아웃 버튼
@@ -106,7 +134,7 @@ class _CarrierMyPageViewState extends ConsumerState<CarrierMyPageView> {
   Widget _buildProfileCard(CarrierProfileState profile) {
     return Container(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(border: Border.all(color: Colors.black12), borderRadius: BorderRadius.circular(16)),
+      decoration: BoxDecoration(color: Colors.white, border: Border.all(color: Colors.black12), borderRadius: BorderRadius.circular(16)),
       child: Row(
         children: [
           Container(
@@ -141,7 +169,7 @@ class _CarrierMyPageViewState extends ConsumerState<CarrierMyPageView> {
 
   Widget _buildMenuItem(IconData icon, String title, {VoidCallback? onTap}) {
     return ListTile(
-      contentPadding: EdgeInsets.zero,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16),
       leading: Icon(icon, color: primaryNavy, size: 22),
       title: Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
       trailing: const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey),
@@ -151,7 +179,7 @@ class _CarrierMyPageViewState extends ConsumerState<CarrierMyPageView> {
 
   Widget _buildStatBox(String label, String value, IconData icon, Color iconColor) => Container(
     padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(border: Border.all(color: Colors.black12), borderRadius: BorderRadius.circular(12)),
+    decoration: BoxDecoration(color: Colors.white, border: Border.all(color: Colors.black12), borderRadius: BorderRadius.circular(12)),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

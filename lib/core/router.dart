@@ -21,6 +21,8 @@ import '../views/shipper/tracking/shipper_order_list_view.dart';
 import '../views/shipper/tracking/shipperHistoryTrackingView.dart';
 import '../views/carrier/home/carrierRecommendationView.dart';
 import '../models/carrier/order_model.dart';
+import '../views/common/reportListView.dart';
+import '../views/common/reportCreateView.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -55,6 +57,19 @@ final routerProvider = Provider<GoRouter>((ref) {
             currentLat: data['lat'] as double,
             currentLng: data['lng'] as double,
           );
+        },
+      ),
+      // 메모: 내 신고 리스트 경로 추가
+      GoRoute(
+        path: '/report-list',
+        builder: (context, state) => const ReportListView(),
+      ),
+      // 메모: 신고 작성 경로 추가
+      GoRoute(
+        path: '/report-create',
+        builder: (context, state) {
+          final orderId = state.extra as int;
+          return ReportCreateView(orderId: orderId);
         },
       ),
       GoRoute(
