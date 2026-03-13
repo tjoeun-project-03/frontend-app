@@ -177,26 +177,27 @@ class _CarrierTrackingViewState extends ConsumerState<CarrierTrackingView> {
                 return;
               }
               
-              // 1. 다이얼로그 먼저 닫기
               Navigator.pop(ctx); 
               
-              // 2. 🚀 [핵심] 위치 추적을 먼저 중단하여 리소스를 해제합니다.
-              await ref.read(carrierTrackingProvider.notifier).stopTracking();
+              // 🚀 1. 서버 완료 요청을 먼저 보냅니다. (가장 중요)
+              print("📡 [View] 배송 완료 요청 시작");
+              final success = await ref.read(activeOrderProvider.notifier).completeOrder(
+                order.orderId, 
+                input,
+              );
               
-              // 3. 🚀 리소스 정리 시간을 줍니다.
-              await Future.delayed(const Duration(milliseconds: 200));
-
               if (mounted) {
-                // 4. 서버 완료 처리 및 상태 변경 (화면 전환)
-                final success = await ref.read(activeOrderProvider.notifier).completeOrder(
-                  order.orderId, 
-                  input,
-                );
-                
-                if (!success && mounted) {
+                if (success) {
+                  // 🚀 2. 요청 성공 후, 위치 추적 중단을 비차단(Non-blocking)으로 실행
+                  print("✅ [View] 배송 완료 성공. 리소스 정리 시작");
+                  ref.read(carrierTrackingProvider.notifier).stopTracking();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("배송이 완료되었습니다!"))
+                  );
+                } else {
                   setState(() => _isMapVisible = true);
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("완료 처리 중 오류가 발생했습니다."))
+                    const SnackBar(content: Text("서버 처리 중 오류가 발생했습니다."))
                   );
                 }
               }

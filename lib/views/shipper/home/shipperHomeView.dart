@@ -19,7 +19,7 @@ class _ShipperHomeViewState extends State<ShipperHomeView> {
     ..loadFlutterAsset('assets/tmap.html');
 
   Timer? _debounce;
-  double _estimatedWeight = 5.0;
+  double _estimatedWeight = 1.0; // 🚀 초기값 조정
   String? _selectedCategory = "가전";
 
   int _serverPrice = 0;           
@@ -46,7 +46,7 @@ class _ShipperHomeViewState extends State<ShipperHomeView> {
       startLat = null; startLng = null;
       endLat = null; endLng = null;
       _selectedCategory = "가전";
-      _estimatedWeight = 5.0;
+      _estimatedWeight = 1.0;
       _serverPrice = 0;
       _baseCost = 0;
       _surchargeAmount = 0;
@@ -68,7 +68,8 @@ class _ShipperHomeViewState extends State<ShipperHomeView> {
 
     try {
       final response = await Dio().post(
-        "http://10.0.2.2:8000/api/v1/orders/estimate",
+        // 🚀 AWS 주소로 변경
+        "http://52.204.62.127:8000/api/v1/orders/estimate",
         data: {
           "start_lat": startLat,
           "start_lng": startLng,
@@ -272,7 +273,8 @@ class _ShipperHomeViewState extends State<ShipperHomeView> {
         Text("예상 무게", style: TextStyle(fontWeight: FontWeight.bold, color: jimlineNavy)),
         Text("${_estimatedWeight.toStringAsFixed(1)} 톤", style: TextStyle(fontWeight: FontWeight.bold, color: jimlineNavy))
       ]),
-      Slider(value: _estimatedWeight, min: 0.5, max: 5.0, activeColor: jimlineNavy, onChanged: (val) => setState(() => _estimatedWeight = val))
+      // 🚀 슬라이더 범위 0.0 ~ 5.0으로 수정
+      Slider(value: _estimatedWeight, min: 0.0, max: 5.0, activeColor: jimlineNavy, onChanged: (val) => setState(() => _estimatedWeight = val))
     ]),
   );
 

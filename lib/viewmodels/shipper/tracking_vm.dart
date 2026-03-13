@@ -105,9 +105,7 @@ class TrackingViewModel extends StateNotifier<TrackingState> {
     final baseUrl = _dio.options.baseUrl;
     final uri = Uri.parse(baseUrl);
     final host = uri.host;
-    
-    // 포트가 명시되어 있지 않으면 기본값 사용, 있으면 해당 호스트 유지
-    // 에뮬레이터 10.0.2.2 대응
+
     final wsUrl = Uri.parse('ws://$host:8000/api/v1/tracking/ws/$orderId');
     print("웹소켓 연결 시도: $wsUrl");
 

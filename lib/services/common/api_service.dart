@@ -21,7 +21,8 @@ class ApiService {
   void _initializeDio() {
     dio = Dio(
       BaseOptions(
-        baseUrl: "http://10.0.2.2:8080",
+        // 🚀 AWS 주소로 변경
+        baseUrl: "http://52.204.62.127:8080",
         connectTimeout: const Duration(seconds: 10),
         receiveTimeout: const Duration(seconds: 10),
         headers: {'Content-Type': 'application/json'},
@@ -38,58 +39,40 @@ class ApiService {
           return handler.next(options);
         },
         onError: (error, handler) async {
-          // 1. 이미 재시도한 요청이거나 401이 아니면 통과
-          if (error.response?.statusCode != 401 || error.requestOptions.extra['is_retry'] == true) {
+          if (error.requestOptions.extra['is_retry'] == true) {
+            print("🚫 [ApiService] 재시도 요청에서도 401 발생. 로그아웃 처리.");
+            await logout();
             return handler.next(error);
           }
 
-          print("🚨 [ApiService] 401 에러 감지: ${error.requestOptions.path}");
-
-          // 2. 토큰 갱신 (한 번에 하나만 수행)
-          if (!_isRefreshing) {
-            _isRefreshing = true;
-            _refreshCompleter = Completer<void>();
-
-            final bool refreshed = await _refreshToken();
-
-            _isRefreshing = false;
-            _refreshCompleter?.complete();
-
-            if (!refreshed) {
-              print("❌ [ApiService] 토큰 갱신 최종 실패. 로그아웃 처리.");
-              await logout();
-              return handler.next(error);
+          if (error.response?.statusCode == 401) {
+            if (!_isRefreshing) {
+              _isRefreshing = true;
+              _refreshCompleter = Completer<void>();
+              final bool refreshed = await _refreshToken();
+              _isRefreshing = false;
+              _refreshCompleter?.complete();
+              if (!refreshed) {
+                await logout();
+                return handler.next(error);
+              }
+            } else {
+              await _refreshCompleter?.future;
             }
-          } else {
-            print("⏳ [ApiService] 다른 요청이 갱신 중... 대기");
-            await _refreshCompleter?.future;
-          }
 
-          // 3. 갱신된 토큰으로 재시도
-          try {
-            final newToken = await _storage.read(key: 'access_token');
+            String? newToken = await _storage.read(key: 'access_token');
             final options = error.requestOptions;
-
             options.headers['Authorization'] = 'Bearer $newToken';
             options.extra['is_retry'] = true;
 
-            print("🔄 [ApiService] 새 토큰으로 재시도 시작: ${options.path}");
-
-            final response = await dio.request(
-              options.path,
-              data: options.data,
-              queryParameters: options.queryParameters,
-              options: Options(
-                method: options.method,
-                headers: options.headers,
-                extra: options.extra,
-              ),
-            );
-            return handler.resolve(response);
-          } catch (e) {
-            print("💀 [ApiService] 재시도 중 예외 발생: $e");
-            return handler.next(error);
+            try {
+              final response = await dio.fetch(options);
+              return handler.resolve(response);
+            } catch (e) {
+              return handler.next(error);
+            }
           }
+          return handler.next(error);
         },
       ),
     );
@@ -100,7 +83,8 @@ class ApiService {
       String? refreshToken = await _storage.read(key: 'refresh_token');
       if (refreshToken == null) return false;
 
-      final refreshDio = Dio(BaseOptions(baseUrl: "http://10.0.2.2:8080"));
+      // 🚀 AWS 주소로 변경
+      final refreshDio = Dio(BaseOptions(baseUrl: "http://52.204.62.127:8080"));
       final response = await refreshDio.post(
         "/api/auth/refresh",
         data: refreshToken,
@@ -109,21 +93,14 @@ class ApiService {
 
       if (response.statusCode == 200) {
         final data = response.data;
-        final newAccess = data['accessToken'] ?? data['token'];
-        final newRefresh = data['refreshToken'];
-
-        if (newAccess != null) {
-          await _storage.write(key: 'access_token', value: newAccess);
-          if (newRefresh != null) {
-            await _storage.write(key: 'refresh_token', value: newRefresh);
-          }
-          print("✨ [ApiService] 토큰 갱신 성공");
-          return true;
+        await _storage.write(key: 'access_token', value: data['accessToken']);
+        if (data['refreshToken'] != null) {
+          await _storage.write(key: 'refresh_token', value: data['refreshToken']);
         }
+        return true;
       }
       return false;
     } catch (e) {
-      print("❌ [ApiService] 리프레시 요청 에러: $e");
       return false;
     }
   }
@@ -132,7 +109,6 @@ class ApiService {
     await _storage.delete(key: 'access_token');
     await _storage.delete(key: 'refresh_token');
     await _storage.delete(key: 'user_role');
-    print("🚩 [ApiService] 세션 종료");
   }
 
   FlutterSecureStorage getStorage() => _storage;

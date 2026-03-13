@@ -47,18 +47,23 @@ class ActiveOrderViewModel extends StateNotifier<ActiveOrderState> {
     }
   }
 
-  /// 🚀 주문 완료 처리: 로컬 상태를 먼저 비워 즉시 화면을 전환합니다.
+  /// 🚀 주문 완료 처리: 상태를 강제 초기화하여 UI 스위칭을 유도합니다.
   Future<bool> completeOrder(int orderId, String invoiceNo) async {
     try {
+      print("📡 [ActiveOrder] 배송 완료 서버 요청 중: OrderID $orderId");
+      
       // 1. 서버에 완료 신호 송신
-      await _api.dio.post("/api/orders/$orderId/complete", data: {'invoice': invoiceNo});
-      await _storage.delete(key: 'active_order_id');
+      final response = await _api.dio.post("/api/orders/$orderId/complete", data: {'invoice': invoiceNo});
       
-      // 2. 로컬 상태 즉시 초기화 (이것이 호출되면 CarrierHomeView가 리빌드되어 오더보드로 돌아감)
-      state = ActiveOrderState(activeOrder: null, isInitialized: true);
-      print("✅ [ActiveOrder] 배송 완료 처리 완료 및 상태 초기화");
-      
-      return true;
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        await _storage.delete(key: 'active_order_id');
+        
+        // 2. 🚀 핵심: 새로운 객체로 상태를 덮어씌워 리빌드를 강제합니다.
+        state = ActiveOrderState(activeOrder: null, isInitialized: true);
+        print("✅ [ActiveOrder] 상태 초기화 완료 -> 오더보드로 전환 유도");
+        return true;
+      }
+      return false;
     } catch (e) {
       print("❌ [ActiveOrder] 배송 완료 요청 실패: $e");
       return false;
@@ -75,6 +80,11 @@ class ActiveOrderViewModel extends StateNotifier<ActiveOrderState> {
       await syncWithServer(); 
       return true;
     } catch (e) { return false; }
+  }
+  
+  // 🚀 로그아웃 시 상태 초기화
+  void clear() {
+    state = ActiveOrderState();
   }
 }
 

@@ -6,8 +6,8 @@ class LicenseService {
 
   Future<Map<String, dynamic>> verifyLicense(String imagePath) async {
     try {
-      // 🚀 파이썬 서버 주소 (8000 포트)
-      final String pythonUrl = "http://10.0.2.2:8000/api/v1/license/verify";
+      // 🚀 AWS 주소로 변경 (8000 포트)
+      final String pythonUrl = "http://52.204.62.127:8000/api/v1/license/verify";
 
       FormData formData = FormData.fromMap({
         "file": await MultipartFile.fromFile(imagePath, filename: "license.jpg"),
@@ -24,7 +24,6 @@ class LicenseService {
       );
 
       if (response.statusCode == 200) {
-        // 서버 응답이 Map인지 확인 후 반환
         if (response.data is Map) {
           return Map<String, dynamic>.from(response.data);
         }

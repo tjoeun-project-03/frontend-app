@@ -31,23 +31,18 @@ class RecommendationViewModel extends StateNotifier<RecommendationState> {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-      final results = await Future.wait([
-        _api.dio.get("/api/users/me"),
-        _api.dio.get("/api/users/me/carrier")
-      ]);
+      final meRes = await _api.dio.get("/api/users/me");
+      final carrierRes = await _api.dio.get("/api/users/me/carrier");
 
-      final String homeAddress = results[0].data['address'] ?? "";
-      final String rawCarType = results[1].data['carType'] ?? "TON_1";
+      final String homeAddress = meRes.data['address'] ?? "";
+      final String rawCarType = carrierRes.data['carType'] ?? "TON_1";
 
-      // 🚀 AI 서버(Python)의 CSV 데이터 형식에 맞게 차종 명칭 변환
-      // DB: TON_1 -> CSV: 1t
       String mappedCarType = "1t";
       if (rawCarType.contains("1_4")) mappedCarType = "1.4t";
       else if (rawCarType.contains("2_5")) mappedCarType = "2.5t";
       else if (rawCarType.contains("5")) mappedCarType = "5t";
       else mappedCarType = "1t";
 
-      // 1. 주소 -> 좌표 변환
       final geoRes = await Dio().get(
         "https://apis.openapi.sk.com/tmap/geo/fullAddrGeo",
         queryParameters: {
@@ -71,23 +66,19 @@ class RecommendationViewModel extends StateNotifier<RecommendationState> {
         "current_lng": currentLng,
         "home_lat": homeLat,
         "home_lng": homeLng,
-        "car_type": mappedCarType, // 🚀 변환된 차종 전달
+        "car_type": mappedCarType,
       };
 
-      print("📡 [AI Request] 데이터 송신: $requestBody");
-
-      // 2. AI 서버 호출
+      // 🚀 AWS 주소로 변경
       final response = await Dio().post(
-        "http://10.0.2.2:8000/api/v1/recommendations/top3",
+        "http://52.204.62.127:8000/api/v1/recommendations/top3",
         data: requestBody,
       );
 
       if (response.statusCode == 200) {
         final List<dynamic> data = response.data['data'];
-        print("🔍 [AI Response] 수신된 추천 수: ${data.length}");
-        
         if (data.isEmpty) {
-          state = state.copyWith(isLoading: false, error: "현재 위치(${currentLat.toStringAsFixed(2)})에서 집 방향으로 가는 적절한 오더를 찾지 못했습니다.");
+          state = state.copyWith(isLoading: false, error: "조건에 맞는 추천 오더가 없습니다.");
         } else {
           final list = data.map((json) => RecommendedOrder.fromJson(json)).toList();
           state = state.copyWith(recommendations: list, isLoading: false);
